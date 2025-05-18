@@ -35,8 +35,12 @@ while True:
         series = 'Premiums Pop Culture'
     if series.lower() == 'ns':
         series = 'Neon Speeders'
-    if series.lower() == 'ssff':
-        series = 'Silver Series Fast & Furious'
+    if series.lower() == 'ssffv':
+        series = 'Silver Series Fast & Furious Villains'
+    if series.lower() == 'mfs':
+        series = '1/4 Mile Finals Series'
+    if series.lower() == '57a':
+        series = '57th Anniversary Series'
     ws.append([last_serial_number, model_name, series])
     
     # Increment serial number

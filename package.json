@@ -1,0 +1,36 @@
+{
+  "name": "diecast-tracker",
+  "version": "1.0.0",
+  "description": "Hot Wheels Die-Cast Collection Management System",
+  "main": "main.py",
+  "scripts": {
+    "start": "python main.py",
+    "add": "python scripts/add_model.py",
+    "search": "python scripts/search_model.py",
+    "stats": "python scripts/statistics.py",
+    "field": "python scripts/add_field.py",
+    "excel": "start HW_list.xlsx",
+    "help": "echo Available commands: start, add, search, stats, field, excel",
+    "test": "python -c \"print('DieCastTracker is working!')\""
+  },
+  "keywords": [
+    "hot-wheels",
+    "die-cast",
+    "collection",
+    "tracker",
+    "python",
+    "excel"
+  ],
+  "author": "Ankur Ram",
+  "license": "MIT",
+  "dependencies": {
+    "openpyxl": ">=3.0.0"
+  },
+  "engines": {
+    "python": ">=3.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "local"
+  }
+}

@@ -21,16 +21,21 @@ A comprehensive Python-based system for managing your Hot Wheels die-cast car co
 
 ### 🎯 Core Functionality
 - **Add Models**: Easily add new Hot Wheels cars to your collection
+- **Update Models**: Edit existing models with automatic backup protection
+- **Delete Models**: Remove models with safety confirmations and backup
 - **Search & Filter**: Find specific models by name, brand, or series
 - **Statistics Dashboard**: Comprehensive analytics of your collection
 - **Field Management**: Add custom fields to track additional data
 - **Excel Integration**: Full Excel file support with automatic creation
+- **Automatic Backups**: Timestamped and latest backups before any changes
 
 ### 🚀 User Experience
 - **Interactive Menus**: Beautiful, emoji-rich command-line interface
+- **Modern Web Interface**: Responsive design with edit/delete buttons
 - **Quick Shortcuts**: Use `#13` format for rapid series selection
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Multiple Launch Options**: Main menu, batch files, and direct scripts
+- **Safety Features**: Double confirmation for deletions, automatic backups
 
 ### 📊 Analytics & Insights
 - **Collection Statistics**: Total count, series breakdown, diversity metrics

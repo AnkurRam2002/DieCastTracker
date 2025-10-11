@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - DieCast Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            background: transparent;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header h1 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .page-header p {
+            color: #6c757d;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card .stat-icon.total { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-card .stat-icon.series { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .stat-card .stat-icon.milestone { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .stat-card .stat-icon.progress { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+            line-height: 1;
+        }
+        
+        .stat-card p {
+            color: #6c757d;
+            margin: 0.5rem 0 0 0;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-container canvas {
+            flex: 1;
+            max-height: 300px;
+        }
+        
+        .chart-container h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-container h4 i {
+            color: #667eea;
+        }
+        
+        .progress-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .milestone-item {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .milestone-item:hover {
+            background: rgba(248, 249, 250, 1);
+            transform: translateX(5px);
+        }
+        
+        .milestone-item.completed {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .milestone-item.next {
+            border-left-color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+        
+        .recent-item {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .recent-item:hover {
+            background: rgba(248, 249, 250, 1);
+            transform: translateX(5px);
+        }
+        
+        .recent-additions-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .recent-additions-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .recent-additions-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+        
+        .recent-additions-container::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 3px;
+        }
+        
+        .recent-additions-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.7);
+        }
+        
+        .insight-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            display: inline-block;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-car"></i> DieCast Tracker
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/add">
+                            <i class="fas fa-plus"></i> Add Model
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/analytics">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/series">
+                            <i class="fas fa-cogs"></i> Series Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="fas fa-chart-line"></i> Collection Analytics</h1>
+                <p>Comprehensive insights into your die-cast car collection</p>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row" id="statsCards">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <h3 id="totalModels">0</h3>
+                        <p>Total Models</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon series">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h3 id="totalSeries">0</h3>
+                        <p>Unique Series</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon milestone">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h3 id="nextMilestone">0</h3>
+                        <p>Next Milestone</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon progress">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h3 id="progressPercent">0%</h3>
+                        <p>Progress</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-bar"></i> Series Distribution</h4>
+                        <div class="loading-spinner" id="seriesChartLoading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <canvas id="seriesChart" style="display: none;"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-pie"></i> Collection Progress</h4>
+                        <div class="loading-spinner" id="progressChartLoading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <canvas id="progressChart" style="display: none;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collection Goals -->
+            <div class="progress-container">
+                <h4><i class="fas fa-target"></i> Collection Milestones</h4>
+                <div id="milestoneProgress">
+                    <div class="loading-spinner">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Additions & Insights -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-clock"></i> Recent Additions</h4>
+                        <div class="recent-additions-container">
+                            <div id="recentAdditions">
+                                <div class="loading-spinner">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-lightbulb"></i> Collection Insights</h4>
+                        <div id="modelInsights">
+                            <div class="loading-spinner">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 DieCast Tracker. Built with FastAPI and modern web technologies.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let seriesChart, progressChart;
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStats(data.analytics);
+                    updateCharts(data.analytics);
+                    updateRecentAdditions(data.analytics.recent_additions);
+                    updateModelInsights(data.analytics.model_insights);
+                    updateMilestoneProgress(data.analytics.collection_goals);
+                } else {
+                    console.error('Failed to load analytics:', data.error);
+                    showError('Failed to load analytics data');
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showError('Error loading analytics data');
+            }
+        }
+
+        function showError(message) {
+            const containers = ['seriesChartLoading', 'progressChartLoading', 'milestoneProgress', 'recentAdditions', 'modelInsights'];
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) {
+                    container.innerHTML = `<div class="text-center text-muted"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+                }
+            });
+        }
+
+        function updateStats(analytics) {
+            document.getElementById('totalModels').textContent = analytics.total_models;
+            document.getElementById('totalSeries').textContent = Object.keys(analytics.series_breakdown).length;
+            document.getElementById('nextMilestone').textContent = analytics.collection_goals.next_milestone || 'N/A';
+            document.getElementById('progressPercent').textContent = 
+                Math.round(analytics.collection_goals.progress_percentage) + '%';
+        }
+
+        function updateCharts(analytics) {
+            // Series Distribution Chart
+            const seriesCtx = document.getElementById('seriesChart').getContext('2d');
+            if (seriesChart) seriesChart.destroy();
+            
+            const seriesData = Object.entries(analytics.series_breakdown);
+            seriesChart = new Chart(seriesCtx, {
+                type: 'bar',
+                data: {
+                    labels: seriesData.map(item => item[0]),
+                    datasets: [{
+                        label: 'Number of Models',
+                        data: seriesData.map(item => item[1]),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Progress Chart
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            if (progressChart) progressChart.destroy();
+            
+            const progress = analytics.collection_goals.progress_percentage;
+            progressChart = new Chart(progressCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [progress, 100 - progress],
+                        backgroundColor: ['rgba(102, 126, 234, 0.8)', 'rgba(200, 200, 200, 0.8)'],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 1,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Hide loading spinners and show charts
+            document.getElementById('seriesChartLoading').style.display = 'none';
+            document.getElementById('progressChartLoading').style.display = 'none';
+            document.getElementById('seriesChart').style.display = 'block';
+            document.getElementById('progressChart').style.display = 'block';
+        }
+
+        function updateRecentAdditions(recent) {
+            const container = document.getElementById('recentAdditions');
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-info-circle"></i> No recent additions</div>';
+                return;
+            }
+
+            container.innerHTML = recent.map(item => `
+                <div class="recent-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${item['Model Name'] || item['S.No']}</strong><br>
+                            <small class="text-muted">${item['Series'] || 'No series'}</small>
+                        </div>
+                        <i class="fas fa-car text-primary"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateModelInsights(insights) {
+            const container = document.getElementById('modelInsights');
+            let html = '';
+
+            if (insights.common_words && Object.keys(insights.common_words).length > 0) {
+                html += '<h6 class="mb-3"><i class="fas fa-tags"></i> Most Common Words:</h6>';
+                html += '<div class="mb-4">';
+                Object.entries(insights.common_words).slice(0, 5).forEach(([word, count]) => {
+                    html += `<span class="insight-badge">${word} (${count})</span>`;
+                });
+                html += '</div>';
+            }
+
+            if (insights.average_name_length) {
+                html += `<h6 class="mb-3"><i class="fas fa-ruler"></i> Average Name Length:</h6>`;
+                html += `<div class="insight-badge">${insights.average_name_length.toFixed(1)} characters</div>`;
+            }
+
+            container.innerHTML = html || '<div class="text-center text-muted"><i class="fas fa-info-circle"></i> No insights available</div>';
+        }
+
+        function updateMilestoneProgress(goals) {
+            const container = document.getElementById('milestoneProgress');
+            const milestones = [10, 25, 50, 100, 250, 500, 1000];
+            const current = goals.current_count;
+            
+            let html = '';
+            milestones.forEach(milestone => {
+                const isReached = current >= milestone;
+                const isNext = milestone === goals.next_milestone;
+                const progress = Math.min((current / milestone) * 100, 100);
+                
+                let itemClass = 'milestone-item';
+                if (isReached) itemClass += ' completed';
+                else if (isNext) itemClass += ' next';
+                
+                html += `
+                    <div class="${itemClass}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>${milestone} cars</strong>
+                                ${isReached ? '<i class="fas fa-check-circle text-success ms-2"></i>' : ''}
+                            </div>
+                            <div>
+                                ${isNext ? '<span class="badge bg-warning text-dark">🎯 Next Goal</span>' : ''}
+                                <span class="text-muted">${Math.round(progress)}%</span>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar ${isReached ? 'bg-success' : isNext ? 'bg-warning' : 'bg-secondary'}" 
+                                 style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load analytics on page load
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+    </script>
+</body>
+</html>

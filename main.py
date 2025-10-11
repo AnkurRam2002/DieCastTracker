@@ -8,49 +8,82 @@ import os
 import sys
 import subprocess
 from datetime import datetime
+from typing import Dict, Callable
 
-def print_banner():
-    """Print the application banner"""
-    print("🚗" + "="*50 + "🚗")
-    print("    HOT WHEELS DIE-CAST TRACKER")
-    print("    Collection Management System")
-    print("🚗" + "="*50 + "🚗")
-    print()
+# Import our utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+from cli_utils import (
+    DisplayUtils, InputUtils, print_success, print_error, 
+    print_info, pause_for_user, clear_screen
+)
 
-def print_menu():
-    """Print the main menu"""
-    print("📋 MAIN MENU")
-    print("-" * 30)
-    print("1. 🆕 Add New Model")
-    print("2. 🔍 Search Models")
-    print("3. 📊 View Statistics")
-    print("4. ➕ Add New Field")
-    print("5. 📁 Open Excel File")
-    print("6. ❓ Help & Info")
-    print("7. 🚪 Exit")
-    print("-" * 30)
-
-def run_script(script_name):
-    """Run a Python script"""
-    try:
-        script_path = os.path.join('scripts', script_name)
-        if os.path.exists(script_path):
-            print(f"🚀 Running {script_name}...")
-            print("-" * 40)
-            subprocess.run([sys.executable, script_path], check=True)
-        else:
-            print(f"❌ Script '{script_name}' not found!")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error running {script_name}: {e}")
-    except KeyboardInterrupt:
-        print(f"\n⏹️  {script_name} interrupted by user")
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-
-def open_excel_file():
-    """Open the Excel file with default application"""
-    file_path = os.path.join('data', 'HW_list.xlsx')
-    if os.path.exists(file_path):
+class DieCastTrackerApp:
+    """Main application class for DieCast Tracker CLI"""
+    
+    def __init__(self):
+        self.script_mapping = {
+            '1': ('add_model.py', 'Add New Model'),
+            '2': ('update_model.py', 'Update Model'),
+            '3': ('delete_model.py', 'Delete Model'),
+            '4': ('search_model.py', 'Search Models'),
+            '5': ('statistics.py', 'View Statistics'),
+            '6': ('add_field.py', 'Add New Field'),
+            '9': ('manage_series.py', 'Manage Series Configuration')
+        }
+    
+    def print_banner(self):
+        """Print the application banner"""
+        print("🚗" + "="*50 + "🚗")
+        print("    HOT WHEELS DIE-CAST TRACKER")
+        print("    Collection Management System")
+        print("🚗" + "="*50 + "🚗")
+        print()
+    
+    def print_menu(self):
+        """Print the main menu"""
+        DisplayUtils.print_section("📋 MAIN MENU")
+        print("1. 🆕 Add New Model")
+        print("2. ✏️  Update Model")
+        print("3. 🗑️  Delete Model")
+        print("4. 🔍 Search Models")
+        print("5. 📊 View Statistics")
+        print("6. ➕ Add New Field")
+        print("7. 📁 Open Excel File")
+        print("8. ❓ Help & Info")
+        print("9. 🔧 Manage Series Configuration")
+        print("10. 🚪 Exit")
+    
+    def run_script(self, script_name: str, script_display_name: str):
+        """Run a Python script with improved error handling"""
+        try:
+            script_path = os.path.join('scripts', script_name)
+            if not os.path.exists(script_path):
+                print_error(f"Script '{script_name}' not found!")
+                return False
+            
+            print_info(f"Running {script_display_name}...")
+            DisplayUtils.print_section("", 40)
+            
+            result = subprocess.run([sys.executable, script_path], check=True)
+            return result.returncode == 0
+            
+        except subprocess.CalledProcessError as e:
+            print_error(f"Error running {script_display_name}: {e}")
+            return False
+        except KeyboardInterrupt:
+            print_info(f"{script_display_name} interrupted by user")
+            return False
+        except Exception as e:
+            print_error(f"Unexpected error: {e}")
+            return False
+    
+    def open_excel_file(self):
+        """Open the Excel file with default application"""
+        file_path = os.path.join('data', 'HW_list.xlsx')
+        if not os.path.exists(file_path):
+            print_error("Excel file 'HW_list.xlsx' not found!")
+            return
+        
         try:
             if sys.platform.startswith('win'):
                 os.startfile(file_path)
@@ -58,75 +91,77 @@ def open_excel_file():
                 subprocess.run(['open', file_path])
             else:  # Linux
                 subprocess.run(['xdg-open', file_path])
-            print("✅ Excel file opened successfully!")
+            print_success("Excel file opened successfully!")
         except Exception as e:
-            print(f"❌ Could not open Excel file: {e}")
-    else:
-        print("❌ Excel file 'HW_list.xlsx' not found!")
+            print_error(f"Could not open Excel file: {e}")
+    
+    def show_help(self):
+        """Show help and information"""
+        DisplayUtils.print_header("📖 HELP & INFORMATION", 50)
+        print("🚗 DieCastTracker - Hot Wheels Collection Manager")
+        print()
+        print("📁 Available Scripts:")
+        for script_file, description in self.script_mapping.values():
+            print(f"  • {script_file:<20} - {description}")
+        print("  • manage_series.py      - Manage Series Configuration")
+        print()
+        print("💡 Tips:")
+        print("  • Use shortcuts like 'Car Name#13' when adding models")
+        print("  • Statistics show your collection progress and insights")
+        print("  • Excel file is automatically created if it doesn't exist")
+        print("  • All operations create automatic backups for safety")
+        print()
+        print("🔧 Technical Info:")
+        print(f"  • Python Version: {sys.version.split()[0]}")
+        print(f"  • Working Directory: {os.getcwd()}")
+        print(f"  • Current Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 50)
 
-def show_help():
-    """Show help and information"""
-    print("📖 HELP & INFORMATION")
-    print("=" * 50)
-    print("🚗 DieCastTracker - Hot Wheels Collection Manager")
-    print()
-    print("📁 Available Scripts:")
-    print("  • add_model.py    - Add new cars to your collection")
-    print("  • search_model.py - Search for existing cars")
-    print("  • statistics.py   - View collection statistics")
-    print("  • add_field.py    - Add new fields to the database")
-    print()
-    print("💡 Tips:")
-    print("  • Use shortcuts like 'Car Name#13' when adding models")
-    print("  • Statistics show your collection progress and insights")
-    print("  • Excel file is automatically created if it doesn't exist")
-    print()
-    print("🔧 Technical Info:")
-    print(f"  • Python Version: {sys.version}")
-    print(f"  • Working Directory: {os.getcwd()}")
-    print(f"  • Current Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 50)
+    def run(self):
+        """Main application loop"""
+        self.print_banner()
+        
+        while True:
+            try:
+                self.print_menu()
+                choice = InputUtils.get_choice("Enter your choice (1-10): ", 
+                                             [str(i) for i in range(1, 11)])
+                
+                if choice in self.script_mapping:
+                    script_file, script_name = self.script_mapping[choice]
+                    success = self.run_script(script_file, script_name)
+                    
+                    # Pause before showing menu again for interactive scripts
+                    if choice in ['1', '2', '3', '4']:
+                        pause_for_user()
+                        print("\n" + "="*60 + "\n")
+                        
+                elif choice == '7':
+                    self.open_excel_file()
+                    pause_for_user()
+                    print("\n" + "="*60 + "\n")
+                    
+                elif choice == '8':
+                    self.show_help()
+                    pause_for_user()
+                    print("\n" + "="*60 + "\n")
+                    
+                elif choice == '10':
+                    print("\n👋 Thank you for using DieCastTracker!")
+                    print("🚗 Happy collecting!")
+                    break
+                    
+            except KeyboardInterrupt:
+                print("\n\n👋 Goodbye! Thanks for using DieCastTracker!")
+                break
+            except Exception as e:
+                print_error(f"An error occurred: {e}")
+                pause_for_user()
 
 def main():
-    """Main application loop"""
-    print_banner()
-    
-    while True:
-        print_menu()
-        
-        try:
-            choice = input("Enter your choice (1-7): ").strip()
-            
-            if choice == '1':
-                run_script('add_model.py')
-            elif choice == '2':
-                run_script('search_model.py')
-            elif choice == '3':
-                run_script('statistics.py')
-            elif choice == '4':
-                run_script('add_field.py')
-            elif choice == '5':
-                open_excel_file()
-            elif choice == '6':
-                show_help()
-            elif choice == '7':
-                print("\n👋 Thank you for using DieCastTracker!")
-                print("🚗 Happy collecting!")
-                break
-            else:
-                print("❌ Invalid choice! Please enter a number between 1-7.")
-            
-            # Pause before showing menu again
-            if choice in ['1', '2', '3', '4']:
-                input("\n⏸️  Press Enter to return to main menu...")
-                print("\n" + "="*60 + "\n")
-                
-        except KeyboardInterrupt:
-            print("\n\n👋 Goodbye! Thanks for using DieCastTracker!")
-            break
-        except Exception as e:
-            print(f"❌ An error occurred: {e}")
-            input("Press Enter to continue...")
+    """Main entry point"""
+    app = DieCastTrackerApp()
+    app.run()
 
 if __name__ == "__main__":
     main()

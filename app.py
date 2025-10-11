@@ -14,6 +14,12 @@ import os
 from typing import List, Dict, Any
 import uvicorn
 from openpyxl import load_workbook
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+from scripts.backup_utils import create_backup
+from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA, get_all_series, get_subseries, get_series_info
+from collections import Counter
+from datetime import datetime
 
 app = FastAPI(
     title="DieCast Tracker",
@@ -34,26 +40,29 @@ class NewCarModel(BaseModel):
     series: str
     subseries: str
 
-# Static dropdown options - series with their subseries
-SERIES_OPTIONS = {
-    "Mainlines": [
-        "Mainlines",
-        "57th Anniversary Series"
-    ],
-    "Semi-Premiums": [
-        "Ultra Hots",
-        "Silver Series BMW",
-        "Silver Series Fast & Furious Villains",
-        "HW Speed Graphics",
-        "Neon Speeders",
-        "1/4 Mile Finals Series",
-        "Fast & Furious Hobbs & Shaw"
-    ],
-    "Premiums": [
-        "Premiums Pop Culture",
-        "Premiums Boulevard"
-    ]
-}
+# Data model for updating cars
+class UpdateCarModel(BaseModel):
+    serial_number: int
+    model_name: str = None
+    series: str = None
+    subseries: str = None
+
+# Data model for deleting cars
+class DeleteCarModel(BaseModel):
+    serial_number: int
+
+# Data model for series management
+class SeriesUpdateModel(BaseModel):
+    main_series: str
+    subseries: str
+    action: str  # 'add' or 'remove'
+
+class SeriesMetadataModel(BaseModel):
+    main_series: str
+    description: str = None
+    price_range: str = None
+    rarity: str = None
+
 
 def load_excel_data() -> pd.DataFrame:
     """Load data from the Excel file"""
@@ -229,6 +238,251 @@ async def search_data(q: str = "") -> JSONResponse:
             "search_query": q
         })
     
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.put("/api/update-model")
+async def update_model(model: UpdateCarModel) -> JSONResponse:
+    """Update an existing model in the Excel file"""
+    try:
+        # Create backup before update
+        if not create_backup(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to create backup"}
+            )
+        
+        # Load existing workbook
+        if not os.path.exists(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": "Excel file not found"}
+            )
+        
+        wb = load_workbook(EXCEL_FILE_PATH)
+        ws = wb.active
+        
+        # Find the row with the given serial number
+        target_row = None
+        for row_num in range(2, ws.max_row + 1):
+            if ws.cell(row=row_num, column=1).value == model.serial_number:
+                target_row = row_num
+                break
+        
+        if target_row is None:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": f"Model with serial number {model.serial_number} not found"}
+            )
+        
+        # Update the fields that are provided
+        if model.model_name is not None:
+            ws.cell(row=target_row, column=2, value=model.model_name.strip())
+        if model.subseries is not None:
+            ws.cell(row=target_row, column=3, value=model.subseries)
+        
+        # Save workbook
+        wb.save(EXCEL_FILE_PATH)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Successfully updated model with serial number {model.serial_number}!"
+        })
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.delete("/api/delete-model")
+async def delete_model(model: DeleteCarModel) -> JSONResponse:
+    """Delete a model from the Excel file"""
+    try:
+        # Create backup before deletion
+        if not create_backup(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to create backup"}
+            )
+        
+        # Load existing workbook
+        if not os.path.exists(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": "Excel file not found"}
+            )
+        
+        wb = load_workbook(EXCEL_FILE_PATH)
+        ws = wb.active
+        
+        # Find the row with the given serial number
+        target_row = None
+        for row_num in range(2, ws.max_row + 1):
+            if ws.cell(row=row_num, column=1).value == model.serial_number:
+                target_row = row_num
+                break
+        
+        if target_row is None:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": f"Model with serial number {model.serial_number} not found"}
+            )
+        
+        # Delete the row
+        ws.delete_rows(target_row)
+        
+        # Renumber serial numbers
+        for row_num in range(2, ws.max_row + 1):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+        
+        # Save workbook
+        wb.save(EXCEL_FILE_PATH)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Successfully deleted model with serial number {model.serial_number}!"
+        })
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+# Analytics Routes
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request):
+    """Analytics page"""
+    return templates.TemplateResponse("analytics.html", {"request": request})
+
+@app.get("/api/analytics")
+async def get_analytics() -> JSONResponse:
+    """Get comprehensive analytics data"""
+    try:
+        df = load_excel_data()
+        
+        if df.empty:
+            return JSONResponse(content={
+                "success": True,
+                "analytics": {
+                    "total_models": 0,
+                    "series_breakdown": {},
+                    "recent_additions": [],
+                    "collection_goals": {},
+                    "model_insights": {}
+                }
+            })
+        
+        # Basic statistics
+        total_models = len(df)
+        
+        # Series breakdown
+        series_column = 'Series' if 'Series' in df.columns else df.columns[2] if len(df.columns) > 2 else None
+        series_breakdown = {}
+        if series_column:
+            series_counts = df[series_column].value_counts()
+            series_breakdown = series_counts.to_dict()
+        
+        # Recent additions (last 10)
+        recent_additions = df.tail(10).to_dict('records')
+        
+        # Collection goals
+        milestones = [10, 25, 50, 100, 250, 500, 1000]
+        next_milestone = None
+        for milestone in milestones:
+            if total_models < milestone:
+                next_milestone = milestone
+                break
+        
+        collection_goals = {
+            "current_count": total_models,
+            "next_milestone": next_milestone,
+            "progress_percentage": (total_models / next_milestone * 100) if next_milestone else 100
+        }
+        
+        # Model insights
+        model_column = 'Model Name' if 'Model Name' in df.columns else df.columns[1] if len(df.columns) > 1 else None
+        model_insights = {}
+        if model_column:
+            model_names = df[model_column].dropna().astype(str)
+            # Find common words
+            all_words = []
+            for name in model_names:
+                all_words.extend(name.lower().split())
+            word_counts = Counter(all_words)
+            model_insights = {
+                "common_words": dict(word_counts.most_common(10)),
+                "average_name_length": model_names.str.len().mean()
+            }
+        
+        return JSONResponse(content={
+            "success": True,
+            "analytics": {
+                "total_models": total_models,
+                "series_breakdown": series_breakdown,
+                "recent_additions": recent_additions,
+                "collection_goals": collection_goals,
+                "model_insights": model_insights
+            }
+        })
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+# Series Management Routes
+@app.get("/series", response_class=HTMLResponse)
+async def series_management_page(request: Request):
+    """Series management page"""
+    return templates.TemplateResponse("series_management.html", {"request": request})
+
+@app.get("/api/series")
+async def get_series_config() -> JSONResponse:
+    """Get current series configuration"""
+    try:
+        return JSONResponse(content={
+            "success": True,
+            "series_options": SERIES_OPTIONS,
+            "series_metadata": SERIES_METADATA
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/series/update")
+async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
+    """Update series configuration"""
+    try:
+        # This would require modifying the series_config.py file
+        # For now, return a message that this feature needs CLI access
+        return JSONResponse(content={
+            "success": False,
+            "message": "Series configuration updates require CLI access. Please use the manage_series.py script or option 9 in the main CLI menu."
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/series/metadata")
+async def update_series_metadata(metadata: SeriesMetadataModel) -> JSONResponse:
+    """Update series metadata"""
+    try:
+        # This would require modifying the series_config.py file
+        # For now, return a message that this feature needs CLI access
+        return JSONResponse(content={
+            "success": False,
+            "message": "Series metadata updates require CLI access. Please use the manage_series.py script or option 9 in the main CLI menu."
+        })
     except Exception as e:
         return JSONResponse(
             status_code=500,

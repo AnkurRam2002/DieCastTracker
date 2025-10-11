@@ -1,149 +1,118 @@
-from openpyxl import Workbook, load_workbook
+#!/usr/bin/env python3
+"""
+DieCastTracker - Add Model Script
+Add new models to the Hot Wheels collection with improved user experience
+"""
+
 import os
+import sys
 
-# File path
-import os
-file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'HW_list.xlsx')
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Check if file exists, else create a new workbook
-if os.path.exists(file_path):
-    wb = load_workbook(file_path)
-    ws = wb.active
-    # Get the last serial number used from the last row
-    last_serial_number = ws.max_row
-else:
-    wb = Workbook()
-    ws = wb.active
-    # Add headers
-    ws.append(["S.No", "Model Name", "Brand", "Series", "Subseries"])
-    last_serial_number = 1  # Start with 1 if new file
+from scripts.cli_utils import (
+    ExcelManager, DisplayUtils, InputUtils, ModelUtils, 
+    print_success, print_error, print_info, print_warning
+)
 
-print(f"✅ Excel file is ready. Continuing from serial number {last_serial_number}.\n")
-
-# Brand options
-brand_options = ["Hot Wheels", "Matchbox", "Other"]
-
-# Series options as a nested dictionary
-series_options = {
-    "Mainlines": [
-        "Mainlines",
-        "57th Anniversary Series"
-    ],
-    "Semi-Premiums": [
-        "Ultra Hots",
-        "Silver Series BMW",
-        "Silver Series Fast & Furious Villains",
-        "HW Speed Graphics",
-        "Neon Speeders",
-        "1/4 Mile Finals Series",
-        "Fast & Furious Hobbs & Shaw"
-    ],
-    "Premiums": [
-        "Premiums Pop Culture",
-        "Premiums Boulevard"
-    ]
-}
-
-# Function to display brand menu
-def display_brand_menu():
-    print("\nSelect Brand:")
-    print("-" * 20)
-    for i, brand in enumerate(brand_options, start=1):
-        print(f"{i}. {brand}")
-    print("-" * 20)
-
-# Function to display the series menu
-def display_series_menu():
-    print("\nSelect Main Series and Sub Series:")
-    print("-" * 40)
-    for i, (main_series, sub_series_list) in enumerate(series_options.items(), start=1):
-        print(f"{i}. {main_series}")
-        for j, sub_series in enumerate(sub_series_list, start=1):
-            print(f"   {j}. {sub_series}")
-        print()
-    print("-" * 40)
-
-# Keep taking model names and series until user types 'exit'
-while True:
-    model_input = input(f"\nEnter Model Name {last_serial_number} (or type 'exit' to finish): ")
-    if model_input.lower() == 'exit':
-        break
-
-    # Select brand first
-    display_brand_menu()
-    while True:
-        try:
-            brand_choice = int(input("Enter Brand number: "))
-            if 1 <= brand_choice <= len(brand_options):
-                selected_brand = brand_options[brand_choice - 1]
-                break
-            else:
-                print("❌ Invalid Brand number.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
-
-    # Check for shortcut e.g. 'Car Name#13'
-    if '#' in model_input:
-        model_name, shortcut = model_input.split('#', 1)
-        if len(shortcut) == 2 and shortcut.isdigit():
-            main_choice = int(shortcut[0])
-            sub_choice = int(shortcut[1])
-            try:
-                main_series_name = list(series_options.keys())[main_choice - 1]
-                sub_series_list = series_options[main_series_name]
-                selected_subseries = sub_series_list[sub_choice - 1]
-                selected_series = main_series_name
-                print(f"✅ Auto-selected Series: {selected_series} - {selected_subseries}")
-            except (IndexError, ValueError):
-                print("❌ Invalid shortcut code. Falling back to manual selection.")
-                display_series_menu()
-                main_choice = int(input("Enter Main Series number: "))
-                main_series_name = list(series_options.keys())[main_choice - 1]
-                sub_series_list = series_options[main_series_name]
-                sub_choice = int(input("Enter Sub Series number: "))
-                selected_series = main_series_name
-                selected_subseries = sub_series_list[sub_choice - 1]
+class AddModelApp:
+    """Application class for adding new models"""
+    
+    def __init__(self):
+        self.excel_manager = ExcelManager()
+        self.setup_workbook()
+    
+    def setup_workbook(self):
+        """Setup workbook and get initial serial number"""
+        wb, ws, headers, data = self.excel_manager.load_workbook_data()
+        
+        if wb is None:
+            # Create new workbook
+            wb, ws = self.excel_manager.create_new_workbook()
+            self.last_serial_number = 1
+            print_info("Created new Excel file with default headers.")
         else:
-            print("❌ Invalid shortcut format. Use two digits like #12.")
-            continue
-    else:
-        model_name = model_input
-        display_series_menu()
+            self.last_serial_number = len(data) + 1
+            print_success(f"Excel file loaded. Continuing from serial number {self.last_serial_number}.")
+        
+        self.wb = wb
+        self.ws = ws
 
+    def add_model(self, model_name: str, series: str, subseries: str):
+        """Add a new model to the workbook"""
+        self.ws.append([self.last_serial_number, model_name.strip(), subseries])
+        self.last_serial_number += 1
+        print_success(f"Added '{model_name}' to collection (S.No: {self.last_serial_number - 1})")
+    
+    def process_model_input(self, model_input: str):
+        """Process model input and return model details"""
+        # Parse shortcut input if present
+        model_name, main_series, subseries = ModelUtils.parse_shortcut_input(model_input)
+        
+        if main_series and subseries:
+            # Shortcut was successfully parsed
+            return model_name, main_series, subseries
+        else:
+            # Manual selection required
+            main_series, subseries = ModelUtils.get_series_selection()
+            return model_name, main_series, subseries
+    
+    def run(self):
+        """Main application loop"""
+        DisplayUtils.print_header("🆕 ADD NEW MODELS", 50)
+        print_info("Enter model names one by one. Type 'exit' to finish.")
+        print_info("Use shortcuts like 'Car Name#13' for quick series selection.")
+        
+        models_added = 0
+        
         while True:
             try:
-                main_choice = int(input("Enter Main Series number: "))
-                if 1 <= main_choice <= len(series_options):
-                    main_series_name = list(series_options.keys())[main_choice - 1]
-                    selected_series = main_series_name
+                model_input = input(f"\nEnter Model Name {self.last_serial_number} (or type 'exit' to finish): ").strip()
+                
+                if model_input.lower() == 'exit':
                     break
-                else:
-                    print("❌ Invalid Main Series number.")
-            except ValueError:
-                print("❌ Please enter a valid number.")
+                
+                if not model_input:
+                    print_warning("Model name cannot be empty!")
+                    continue
+                
+                # Process the input
+                model_name, main_series, subseries = self.process_model_input(model_input)
+                
+                if not model_name:
+                    print_error("Invalid model name!")
+                    continue
+                
+                # Add the model
+                self.add_model(model_name, main_series, subseries)
+                models_added += 1
+                
+            except KeyboardInterrupt:
+                print_info("\nOperation cancelled by user.")
+                break
+            except Exception as e:
+                print_error(f"Error processing model: {e}")
+                continue
+        
+        # Save the file
+        if models_added > 0:
+            if self.excel_manager.save_workbook(self.wb):
+                print_success(f"All {models_added} model(s) saved to Excel file!")
+            else:
+                print_error("Failed to save Excel file!")
+        else:
+            print_info("No models were added.")
 
-        sub_series_list = series_options[main_series_name]
-        while True:
-            try:
-                sub_choice = int(input("Enter Sub Series number: "))
-                if 1 <= sub_choice <= len(sub_series_list):
-                    selected_subseries = sub_series_list[sub_choice - 1]
-                    break
-                else:
-                    print("❌ Invalid Sub Series number.")
-            except ValueError:
-                print("❌ Please enter a valid number.")
+def main():
+    """Main entry point"""
+    try:
+        app = AddModelApp()
+        app.run()
+    except Exception as e:
+        print_error(f"Application error: {e}")
 
-    # Append to sheet: S.No, Model Name, Brand, Series, Subseries
-    ws.append([last_serial_number, model_name.strip(), selected_brand, selected_series, selected_subseries])
-
-    # Increment serial number
-    last_serial_number += 1
-
-# Save the file
-wb.save(file_path)
-
-print("\n✅ All model names and series have been saved to the Excel file!")
+if __name__ == "__main__":
+    main()
 
 
 

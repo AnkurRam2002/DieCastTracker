@@ -14,7 +14,7 @@ set /p choice="Enter your choice (1-6, or press Enter for Web): "
 if "%choice%"=="" set choice=1
 if "%choice%"=="1" (
     echo Starting Web Application...
-    python start_web.py
+    npm run start-with-venv
 ) else if "%choice%"=="2" (
     echo Starting CLI Interface...
     python main.py
@@ -32,7 +32,7 @@ if "%choice%"=="1" (
     start data\HW_list.xlsx
 ) else (
     echo Invalid choice. Starting Web Application...
-    python start_web.py
+    npm run start-with-venv
 )
 
 pause

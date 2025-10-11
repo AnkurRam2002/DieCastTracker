@@ -1,192 +1,253 @@
-from openpyxl import load_workbook
+#!/usr/bin/env python3
+"""
+DieCastTracker - Statistics Script
+Generate comprehensive statistics and insights for the Hot Wheels collection
+"""
+
 import os
+import sys
 from collections import Counter
 from datetime import datetime
 
-# File path
-import os
-file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'HW_list.xlsx')
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-def load_data():
-    """Load data from Excel file"""
-    if not os.path.exists(file_path):
-        print("❌ Excel file not found! Please make sure 'data/HW_list.xlsx' exists.")
-        return None, None
-    
-    wb = load_workbook(file_path)
-    ws = wb.active
-    
-    # Get headers
-    headers = [cell.value for cell in ws[1]]
-    
-    # Get all data rows
-    data = []
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if any(cell is not None for cell in row):  # Skip empty rows
-            data.append(row)
-    
-    return headers, data
+from scripts.cli_utils import (
+    ExcelManager, DisplayUtils, InputUtils,
+    print_success, print_error, print_info, print_warning
+)
 
-def display_basic_stats(headers, data):
-    """Display basic collection statistics"""
-    print("📊 COLLECTION STATISTICS 📊")
-    print("=" * 50)
+class StatisticsApp:
+    """Application class for generating collection statistics"""
     
-    # Total count
-    total_cars = len(data)
-    print(f"🚗 Total Cars in Collection: {total_cars}")
-    
-    # Series breakdown
-    if len(headers) >= 3:  # Assuming S.No, Model Name, Series columns
-        series_column = 2  # Series is 3rd column (index 2)
-        series_counts = Counter(row[series_column] for row in data if row[series_column])
+    def __init__(self):
+        self.excel_manager = ExcelManager()
+        self.wb, self.ws, self.headers, self.data = self.excel_manager.load_workbook_data()
         
-        print(f"\n📈 Series Breakdown:")
-        print("-" * 30)
+        if self.wb is None:
+            print_error("Cannot load Excel file. Exiting.")
+            sys.exit(1)
+    
+    def display_basic_stats(self):
+        """Display basic collection statistics"""
+        DisplayUtils.print_header("📊 COLLECTION STATISTICS", 50)
+        
+        total_cars = len(self.data)
+        print(f"🚗 Total Cars in Collection: {total_cars}")
+        
+        if total_cars == 0:
+            print_warning("Collection is empty!")
+            return
+        
+        # Series breakdown
+        if len(self.headers) >= 3:  # Assuming S.No, Model Name, Series columns
+            series_column = 2  # Series is 3rd column (index 2)
+            series_counts = Counter(row[series_column] for row in self.data if row[series_column])
+            
+            print(f"\n📈 Series Breakdown:")
+            DisplayUtils.print_section("", 30)
+            for series, count in series_counts.most_common():
+                percentage = (count / total_cars) * 100 if total_cars > 0 else 0
+                print(f"  {series}: {count} cars ({percentage:.1f}%)")
+        
+        print("=" * 50)
+
+    def display_detailed_stats(self):
+        """Display detailed statistics with more insights"""
+        DisplayUtils.print_header("🔍 DETAILED ANALYSIS", 50)
+        
+        total_cars = len(self.data)
+        
+        if total_cars == 0:
+            print_warning("No cars in collection yet!")
+            return
+        
+        # Series analysis
+        if len(self.headers) >= 3:
+            series_column = 2
+            series_counts = Counter(row[series_column] for row in self.data if row[series_column])
+            
+            if series_counts:
+                print(f"📊 Series Analysis:")
+                print(f"  • Most Popular Series: {series_counts.most_common(1)[0][0]} ({series_counts.most_common(1)[0][1]} cars)")
+                print(f"  • Least Popular Series: {series_counts.most_common()[-1][0]} ({series_counts.most_common()[-1][1]} cars)")
+                print(f"  • Total Unique Series: {len(series_counts)}")
+                
+                # Series diversity
+                if len(series_counts) > 1:
+                    diversity = len(series_counts) / total_cars * 100
+                    print(f"  • Series Diversity: {diversity:.1f}% (higher = more variety)")
+        
+        # Model name analysis
+        if len(self.headers) >= 2:
+            model_column = 1
+            model_names = [row[model_column] for row in self.data if row[model_column]]
+            
+            if model_names:
+                # Find common words in model names
+                all_words = []
+                for name in model_names:
+                    if isinstance(name, str):
+                        all_words.extend(name.lower().split())
+                
+                word_counts = Counter(all_words)
+                common_words = word_counts.most_common(5)
+                
+                print(f"\n🏷️  Model Name Insights:")
+                if common_words:
+                    print(f"  • Most Common Words: {', '.join([word for word, count in common_words])}")
+                
+                # Average model name length
+                avg_length = sum(len(str(name)) for name in model_names) / len(model_names)
+                print(f"  • Average Model Name Length: {avg_length:.1f} characters")
+        
+        print("=" * 50)
+
+    def display_recent_additions(self, limit=5):
+        """Display recent additions to the collection"""
+        DisplayUtils.print_header(f"🆕 RECENT ADDITIONS (Last {limit})", 50)
+        
+        if len(self.data) == 0:
+            print_warning("No cars in collection yet!")
+            return
+        
+        # Show the last N entries
+        recent_cars = self.data[-limit:] if len(self.data) >= limit else self.data
+        
+        for i, car in enumerate(recent_cars, 1):
+            serial_no = car[0] if len(car) > 0 else "N/A"
+            model_name = car[1] if len(car) > 1 else "N/A"
+            series = car[2] if len(car) > 2 else "N/A"
+            print(f"  {i}. S.No: {serial_no} | {model_name} | {series}")
+        
+        print("=" * 50)
+
+    def display_collection_goals(self):
+        """Display collection goals and progress"""
+        DisplayUtils.print_header("🎯 COLLECTION GOALS", 50)
+        
+        total_cars = len(self.data)
+        
+        # Milestone goals
+        milestones = [10, 25, 50, 100, 250, 500, 1000]
+        next_milestone = None
+        
+        for milestone in milestones:
+            if total_cars < milestone:
+                next_milestone = milestone
+                break
+        
+        if next_milestone:
+            remaining = next_milestone - total_cars
+            print(f"🎯 Next Milestone: {next_milestone} cars")
+            print(f"📈 Cars needed: {remaining}")
+            print(f"📊 Progress: {(total_cars/next_milestone)*100:.1f}%")
+        else:
+            print(f"🏆 Congratulations! You've exceeded all standard milestones!")
+            print(f"🚀 You have {total_cars} cars - that's an amazing collection!")
+        
+        print("=" * 50)
+
+    def create_simple_chart(self, series_counts):
+        """Create a simple text-based chart"""
+        if not series_counts:
+            return
+        
+        DisplayUtils.print_header("📊 SERIES DISTRIBUTION CHART", 50)
+        
+        max_count = max(series_counts.values())
+        max_bar_length = 30
+        
         for series, count in series_counts.most_common():
-            percentage = (count / total_cars) * 100 if total_cars > 0 else 0
-            print(f"  {series}: {count} cars ({percentage:.1f}%)")
+            bar_length = int((count / max_count) * max_bar_length)
+            bar = "█" * bar_length
+            print(f"{series:<25} │{bar} {count}")
+        
+        print("=" * 50)
     
-    print("=" * 50)
+    def show_interactive_menu(self):
+        """Show interactive statistics menu"""
+        while True:
+            DisplayUtils.print_section("📊 STATISTICS MENU")
+            print("1. Basic Statistics")
+            print("2. Detailed Analysis")
+            print("3. Recent Additions")
+            print("4. Collection Goals")
+            print("5. Series Distribution Chart")
+            print("6. Complete Report")
+            print("7. Exit")
+            
+            choice = InputUtils.get_choice("Select option (1-7): ", [str(i) for i in range(1, 8)])
+            
+            if choice == '1':
+                self.display_basic_stats()
+            elif choice == '2':
+                self.display_detailed_stats()
+            elif choice == '3':
+                limit = InputUtils.get_serial_number("How many recent additions to show (default 5): ") or 5
+                self.display_recent_additions(limit)
+            elif choice == '4':
+                self.display_collection_goals()
+            elif choice == '5':
+                if len(self.headers) >= 3 and self.data:
+                    series_column = 2
+                    series_counts = Counter(row[series_column] for row in self.data if row[series_column])
+                    self.create_simple_chart(series_counts)
+                else:
+                    print_warning("No series data available for chart!")
+            elif choice == '6':
+                self.generate_complete_report()
+            elif choice == '7':
+                break
+            
+            if choice != '7':
+                input("\nPress Enter to continue...")
+                print("\n" + "="*60 + "\n")
 
-def display_detailed_stats(headers, data):
-    """Display detailed statistics with more insights"""
-    print("\n🔍 DETAILED ANALYSIS 🔍")
-    print("=" * 50)
-    
-    total_cars = len(data)
-    
-    if total_cars == 0:
-        print("📭 No cars in collection yet!")
-        return
-    
-    # Series analysis
-    if len(headers) >= 3:
-        series_column = 2
-        series_counts = Counter(row[series_column] for row in data if row[series_column])
+    def generate_complete_report(self):
+        """Generate a complete statistics report"""
+        DisplayUtils.print_header("📊 COMPLETE COLLECTION REPORT", 60)
         
-        print(f"📊 Series Analysis:")
-        print(f"  • Most Popular Series: {series_counts.most_common(1)[0][0]} ({series_counts.most_common(1)[0][1]} cars)")
-        print(f"  • Least Popular Series: {series_counts.most_common()[-1][0]} ({series_counts.most_common()[-1][1]} cars)")
-        print(f"  • Total Unique Series: {len(series_counts)}")
+        self.display_basic_stats()
+        self.display_detailed_stats()
+        self.display_recent_additions()
+        self.display_collection_goals()
         
-        # Series diversity
-        if len(series_counts) > 1:
-            diversity = len(series_counts) / total_cars * 100
-            print(f"  • Series Diversity: {diversity:.1f}% (higher = more variety)")
-    
-    # Model name analysis
-    if len(headers) >= 2:
-        model_column = 1
-        model_names = [row[model_column] for row in data if row[model_column]]
+        # Create visual chart if we have series data
+        if len(self.headers) >= 3 and self.data:
+            series_column = 2
+            series_counts = Counter(row[series_column] for row in self.data if row[series_column])
+            self.create_simple_chart(series_counts)
         
-        # Find common words in model names
-        all_words = []
-        for name in model_names:
-            if isinstance(name, str):
-                all_words.extend(name.lower().split())
-        
-        word_counts = Counter(all_words)
-        common_words = word_counts.most_common(5)
-        
-        print(f"\n🏷️  Model Name Insights:")
-        print(f"  • Most Common Words: {', '.join([word for word, count in common_words])}")
-        
-        # Average model name length
-        avg_length = sum(len(str(name)) for name in model_names) / len(model_names)
-        print(f"  • Average Model Name Length: {avg_length:.1f} characters")
-    
-    print("=" * 50)
+        print(f"\n✅ Report generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
 
-def display_recent_additions(headers, data, limit=5):
-    """Display recent additions to the collection"""
-    print(f"\n🆕 RECENT ADDITIONS (Last {limit}) 🆕")
-    print("=" * 50)
-    
-    if len(data) == 0:
-        print("📭 No cars in collection yet!")
-        return
-    
-    # Show the last N entries
-    recent_cars = data[-limit:] if len(data) >= limit else data
-    
-    for i, car in enumerate(recent_cars, 1):
-        serial_no = car[0] if len(car) > 0 else "N/A"
-        model_name = car[1] if len(car) > 1 else "N/A"
-        series = car[2] if len(car) > 2 else "N/A"
-        print(f"  {i}. S.No: {serial_no} | {model_name} | {series}")
-    
-    print("=" * 50)
-
-def display_collection_goals(headers, data):
-    """Display collection goals and progress"""
-    print(f"\n🎯 COLLECTION GOALS 🎯")
-    print("=" * 50)
-    
-    total_cars = len(data)
-    
-    # Milestone goals
-    milestones = [10, 25, 50, 100, 250, 500, 1000]
-    next_milestone = None
-    
-    for milestone in milestones:
-        if total_cars < milestone:
-            next_milestone = milestone
-            break
-    
-    if next_milestone:
-        remaining = next_milestone - total_cars
-        print(f"🎯 Next Milestone: {next_milestone} cars")
-        print(f"📈 Cars needed: {remaining}")
-        print(f"📊 Progress: {(total_cars/next_milestone)*100:.1f}%")
-    else:
-        print(f"🏆 Congratulations! You've exceeded all standard milestones!")
-        print(f"🚀 You have {total_cars} cars - that's an amazing collection!")
-    
-    print("=" * 50)
-
-def create_simple_chart(series_counts):
-    """Create a simple text-based chart"""
-    if not series_counts:
-        return
-    
-    print(f"\n📊 SERIES DISTRIBUTION CHART 📊")
-    print("=" * 50)
-    
-    max_count = max(series_counts.values())
-    max_bar_length = 30
-    
-    for series, count in series_counts.most_common():
-        bar_length = int((count / max_count) * max_bar_length)
-        bar = "█" * bar_length
-        print(f"{series:<25} │{bar} {count}")
-    
-    print("=" * 50)
+    def run(self):
+        """Main application loop"""
+        DisplayUtils.print_header("🔍 HOT WHEELS COLLECTION STATISTICS", 60)
+        
+        if not self.data:
+            print_warning("Collection is empty! Add some models first.")
+            return
+        
+        print_info("Choose how you'd like to view your collection statistics:")
+        print("1. Interactive menu (recommended)")
+        print("2. Complete report")
+        
+        choice = InputUtils.get_choice("Select option (1-2): ", ['1', '2'])
+        
+        if choice == '1':
+            self.show_interactive_menu()
+        else:
+            self.generate_complete_report()
 
 def main():
-    """Main statistics function"""
-    print("🔍 HOT WHEELS COLLECTION STATISTICS 🔍")
-    print("=" * 60)
-    
-    # Load data
-    headers, data = load_data()
-    if headers is None:
-        return
-    
-    # Display different types of statistics
-    display_basic_stats(headers, data)
-    display_detailed_stats(headers, data)
-    display_recent_additions(headers, data)
-    display_collection_goals(headers, data)
-    
-    # Create visual chart if we have series data
-    if len(headers) >= 3 and data:
-        series_column = 2
-        series_counts = Counter(row[series_column] for row in data if row[series_column])
-        create_simple_chart(series_counts)
-    
-    print(f"\n✅ Statistics generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 60)
+    """Main entry point"""
+    try:
+        app = StatisticsApp()
+        app.run()
+    except Exception as e:
+        print_error(f"Application error: {e}")
 
 if __name__ == "__main__":
     main()

@@ -122,6 +122,10 @@ class DieCastTracker {
             th.textContent = this.formatColumnName(column);
             headerRow.appendChild(th);
         });
+        // Add Actions column header
+        const actionsTh = document.createElement('th');
+        actionsTh.textContent = 'Actions';
+        headerRow.appendChild(actionsTh);
         tableHeader.appendChild(headerRow);
 
         // Render body
@@ -134,6 +138,27 @@ class DieCastTracker {
                 td.textContent = this.formatCellValue(value);
                 tr.appendChild(td);
             });
+            
+            // Add Actions column
+            const actionsTd = document.createElement('td');
+            actionsTd.className = 'actions-cell';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn btn-edit';
+            editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+            editBtn.title = 'Edit Model';
+            editBtn.onclick = () => this.editModel(row);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-delete';
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteBtn.title = 'Delete Model';
+            deleteBtn.onclick = () => this.deleteModel(row);
+            
+            actionsTd.appendChild(editBtn);
+            actionsTd.appendChild(deleteBtn);
+            tr.appendChild(actionsTd);
+            
             tableBody.appendChild(tr);
         });
     }
@@ -211,6 +236,86 @@ class DieCastTracker {
 
     hideError() {
         document.getElementById('error-message').style.display = 'none';
+    }
+
+    async editModel(row) {
+        const serialNumber = row['S.No'];
+        const currentModelName = row['Model Name'] || '';
+        const currentSeries = row['Series'] || '';
+        
+        const newModelName = prompt(`Edit Model Name (current: ${currentModelName}):`, currentModelName);
+        if (newModelName === null) return; // User cancelled
+        
+        const newSeries = prompt(`Edit Series (current: ${currentSeries}):`, currentSeries);
+        if (newSeries === null) return; // User cancelled
+        
+        try {
+            const response = await fetch('/api/update-model', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    serial_number: serialNumber,
+                    model_name: newModelName.trim(),
+                    subseries: newSeries.trim()
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ ' + result.message);
+                this.loadData(); // Refresh the data
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error updating model:', error);
+            alert('❌ Failed to update model: ' + error.message);
+        }
+    }
+
+    async deleteModel(row) {
+        const serialNumber = row['S.No'];
+        const modelName = row['Model Name'] || 'Unknown';
+        
+        const confirmMessage = `⚠️ Are you sure you want to delete this model?\n\nModel: ${modelName}\nSerial Number: ${serialNumber}\n\nThis action cannot be undone!`;
+        
+        if (!confirm(confirmMessage)) {
+            return; // User cancelled
+        }
+        
+        // Double confirmation
+        const doubleConfirm = prompt('Type "DELETE" to confirm deletion:');
+        if (doubleConfirm !== 'DELETE') {
+            alert('❌ Deletion cancelled.');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/delete-model', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    serial_number: serialNumber
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ ' + result.message);
+                this.loadData(); // Refresh the data
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error deleting model:', error);
+            alert('❌ Failed to delete model: ' + error.message);
+        }
     }
 }
 

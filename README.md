@@ -13,6 +13,7 @@ A comprehensive Python-based system for managing your Hot Wheels die-cast car co
 - [Custom Run Commands](#-custom-run-commands)
 - [Data Management](#-data-management)
 - [Statistics & Analytics](#-statistics--analytics)
+- [Documentation](#-documentation)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -281,6 +282,18 @@ npm run excel    # Open Excel file
 - **Goal Setting**: Automatic milestone detection (10, 25, 50, 100, 250, 500, 1000)
 - **Progress Display**: Percentage complete toward next milestone
 - **Motivation**: Clear indication of cars needed for next goal
+
+## 📚 Documentation
+
+### Additional Guides
+- **[Quick Start Guide](docs/QUICK_START.md)** - Fastest ways to get started with npm commands and batch files
+- **[Web Application Guide](docs/README_WEB.md)** - Complete guide to the modern FastAPI web interface
+- **[WARP Development Guide](docs/WARP.md)** - Technical documentation for developers and contributors
+
+### Getting Help
+- **Quick Start**: Use `docs/QUICK_START.md` for immediate setup
+- **Web Interface**: Check `docs/README_WEB.md` for the modern web application
+- **Development**: See `docs/WARP.md` for technical implementation details
 
 ## 🔧 Troubleshooting
 

@@ -5,58 +5,10 @@ Centralized configuration for Hot Wheels series and subseries options
 """
 
 # Series options as a nested dictionary
-# Main series categories with their subseries
-SERIES_OPTIONS = {
-    "Mainlines": [
-        "Mainlines",
-        "54th Anniversary Series",
-        "57th Anniversary Series"
-    ],
-    "Semi-Premiums": [
-        "Ultra Hots",
-        "Silver Series BMW",
-        "Silver Series Fast & Furious Villains",
-        "Silver Series National Icons",
-        "Luxury Sedans",
-        "HW Speed Graphics",
-        "Neon Speeders",
-        "1/4 Mile Finals Series",
-        "Fast & Furious Hobbs & Shaw"
-    ],
-    "Premiums": [
-        "Premiums Pop Culture",
-        "Premiums Boulevard",
-        "Premiums Fast & Furious",
-        "Premiums Car Culture"
-    ],
-    "Others": [
-        "Track Fleet"
-    ]
-}
+SERIES_OPTIONS = {'Mainlines': ['Mainlines', '54th Anniversary Series', '57th Anniversary Series'], 'Semi-Premiums': ['Ultra Hots', 'Silver Series BMW', 'Silver Series Fast & Furious Villains', 'Silver Series National Icons', 'Luxury Sedans', 'HW Speed Graphics', 'Neon Speeders', '1/4 Mile Finals Series', 'Fast & Furious Hobbs & Shaw', 'Transformers'], 'Premiums': ['Premiums Pop Culture', 'Premiums Boulevard', 'Premiums Fast & Furious', 'Premiums Car Culture'], 'Others': ['Track Fleet']}
 
 # Series metadata for additional information
-SERIES_METADATA = {
-    "Mainlines": {
-        "description": "Basic Hot Wheels cars available in most stores",
-        "price_range": "₹180",
-        "rarity": "Common"
-    },
-    "Semi-Premiums": {
-        "description": "Mid-tier cars with better details and packaging",
-        "price_range": "₹300",
-        "rarity": "Uncommon"
-    },
-    "Premiums": {
-        "description": "High-quality cars with premium details and packaging",
-        "price_range": "₹550",
-        "rarity": "Rare"
-    },
-    "Others": {
-        "description": "Special categories and track sets",
-        "price_range": "Varies",
-        "rarity": "Varies"
-    }
-}
+SERIES_METADATA = {'Mainlines': {'description': 'Basic Hot Wheels cars available in most stores', 'price_range': '₹180', 'rarity': 'Common'}, 'Semi-Premiums': {'description': 'Mid-tier cars with better details and packaging', 'price_range': '₹300', 'rarity': 'Uncommon'}, 'Premiums': {'description': 'High-quality cars with premium details and packaging', 'price_range': '₹550', 'rarity': 'Rare'}, 'Others': {'description': 'Special categories and track sets', 'price_range': 'Varies', 'rarity': 'Varies'}}
 
 def get_all_series():
     """Get all main series categories"""

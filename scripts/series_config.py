@@ -5,7 +5,7 @@ Centralized configuration for Hot Wheels series and subseries options
 """
 
 # Series options as a nested dictionary
-SERIES_OPTIONS = {'Mainlines': ['Mainlines', '54th Anniversary Series', '57th Anniversary Series'], 'Silver Series': ['Ultra Hots', 'Silver Series BMW', 'Silver Series Fast & Furious Villains', 'Silver Series National Icons', 'Luxury Sedans', 'HW Speed Graphics', 'Neon Speeders', '1/4 Mile Finals Series', 'Fast & Furious Hobbs & Shaw', 'Transformers'], 'Premiums': ['Premiums Pop Culture', 'Premiums Boulevard', 'Premiums Fast & Furious', 'Premiums Car Culture'], 'Others': ['Track Fleet', 'Color Shifters']}
+SERIES_OPTIONS = {'Mainlines': ['Mainlines', '54th Anniversary Series', '57th Anniversary Series', '53rd Anniversary Series'], 'Silver Series': ['Ultra Hots', 'Silver Series BMW', 'Silver Series Fast & Furious Villains', 'Silver Series National Icons', 'Luxury Sedans', 'HW Speed Graphics', 'Neon Speeders', '1/4 Mile Finals Series', 'Fast & Furious Hobbs & Shaw', 'Transformers', 'Exotics'], 'Premiums': ['Premiums Pop Culture', 'Premiums Boulevard', 'Premiums Fast & Furious', 'Premiums Car Culture'], 'Others': ['Track Fleet', 'Color Shifters']}
 
 # Series metadata for additional information
 SERIES_METADATA = {'Mainlines': {'description': 'Basic Hot Wheels cars available in most stores', 'price_range': '₹180', 'rarity': 'Common'}, 'Silver Series': {'description': 'Mid-tier cars with better details and packaging', 'price_range': '₹300', 'rarity': 'Uncommon'}, 'Premiums': {'description': 'High-quality cars with premium details and packaging', 'price_range': '₹550', 'rarity': 'Rare'}, 'Others': {'description': 'Special categories and track sets', 'price_range': 'Varies', 'rarity': 'Varies'}}

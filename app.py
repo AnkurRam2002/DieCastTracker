@@ -29,7 +29,8 @@ app = FastAPI(
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/pages", StaticFiles(directory="pages"), name="pages")
+templates = Jinja2Templates(directory="pages")
 
 # Path to the Excel file
 EXCEL_FILE_PATH = os.path.join("data", "HW_list.xlsx")
@@ -80,12 +81,12 @@ def load_excel_data() -> pd.DataFrame:
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Home page with the data table"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("home/home.html", {"request": request})
 
 @app.get("/add", response_class=HTMLResponse)
 async def add_model_page(request: Request):
     """Add model page with dropdown form"""
-    return templates.TemplateResponse("add_model.html", {"request": request})
+    return templates.TemplateResponse("add-model/add-model.html", {"request": request})
 
 @app.get("/api/data")
 async def get_data() -> JSONResponse:
@@ -357,7 +358,7 @@ async def delete_model(model: DeleteCarModel) -> JSONResponse:
 @app.get("/analytics", response_class=HTMLResponse)
 async def analytics_page(request: Request):
     """Analytics page"""
-    return templates.TemplateResponse("analytics.html", {"request": request})
+    return templates.TemplateResponse("analytics/analytics.html", {"request": request})
 
 @app.get("/api/analytics")
 async def get_analytics() -> JSONResponse:
@@ -387,8 +388,9 @@ async def get_analytics() -> JSONResponse:
             series_counts = df[series_column].value_counts()
             series_breakdown = series_counts.to_dict()
         
-        # Recent additions (last 10)
+        # Recent additions (last 10) - reversed so newest shows first
         recent_additions = df.tail(10).to_dict('records')
+        recent_additions.reverse()  # Reverse to show newest first
         
         # Collection goals
         milestones = [10, 25, 50, 100, 250, 500, 1000]
@@ -440,7 +442,7 @@ async def get_analytics() -> JSONResponse:
 @app.get("/series", response_class=HTMLResponse)
 async def series_management_page(request: Request):
     """Series management page"""
-    return templates.TemplateResponse("series_management.html", {"request": request})
+    return templates.TemplateResponse("series-management/series-management.html", {"request": request})
 
 @app.get("/api/series")
 async def get_series_config() -> JSONResponse:

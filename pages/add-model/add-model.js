@@ -141,7 +141,8 @@ class AddModelForm {
     showSuccess(message) {
         const successDiv = document.getElementById('success-message');
         successDiv.textContent = message;
-        successDiv.style.display = 'block';
+        successDiv.classList.remove('hidden');
+        successDiv.classList.add('flex', 'items-center');
         this.hideError();
         
         // Auto-hide after 5 seconds
@@ -151,30 +152,47 @@ class AddModelForm {
     }
 
     hideSuccess() {
-        document.getElementById('success-message').style.display = 'none';
+        const successDiv = document.getElementById('success-message');
+        successDiv.classList.add('hidden');
+        successDiv.classList.remove('flex', 'items-center');
     }
 
     showError(message) {
         const errorDiv = document.getElementById('error-message');
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+        errorDiv.classList.remove('hidden');
+        errorDiv.classList.add('flex', 'items-center');
         this.hideSuccess();
     }
 
     hideError() {
-        document.getElementById('error-message').style.display = 'none';
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.classList.add('hidden');
+        errorDiv.classList.remove('flex', 'items-center');
     }
 }
 
 // Initialize the form when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new AddModelForm();
-});
-
-// Add some visual feedback for form interactions
-document.addEventListener('DOMContentLoaded', () => {
+    
     // Add smooth scrolling
     document.documentElement.style.scrollBehavior = 'smooth';
+    
+    // Navbar scroll effect
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            if (currentScroll > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            lastScroll = currentScroll;
+        });
+    }
     
     // Add loading animation to buttons
     const buttons = document.querySelectorAll('.btn');
@@ -187,3 +205,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+

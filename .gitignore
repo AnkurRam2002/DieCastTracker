@@ -41,6 +41,7 @@ Thumbs.db
 .env
 
 # Batch files
+*.bat
 .bat
 
 # Temporary files

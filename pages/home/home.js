@@ -119,21 +119,25 @@ class DieCastTracker {
         const headerRow = document.createElement('tr');
         columns.forEach(column => {
             const th = document.createElement('th');
+            th.className = 'px-3 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap';
             th.textContent = this.formatColumnName(column);
             headerRow.appendChild(th);
         });
         // Add Actions column header
         const actionsTh = document.createElement('th');
+        actionsTh.className = 'px-3 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap';
         actionsTh.textContent = 'Actions';
         headerRow.appendChild(actionsTh);
         tableHeader.appendChild(headerRow);
 
         // Render body
         tableBody.innerHTML = '';
-        data.forEach(row => {
+        data.forEach((row, index) => {
             const tr = document.createElement('tr');
+            tr.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50 transition-colors' : 'bg-gray-50 hover:bg-gray-100 transition-colors';
             columns.forEach(column => {
                 const td = document.createElement('td');
+                td.className = 'px-3 py-3 text-sm text-gray-700';
                 const value = row[column];
                 td.textContent = this.formatCellValue(value);
                 tr.appendChild(td);
@@ -141,16 +145,16 @@ class DieCastTracker {
             
             // Add Actions column
             const actionsTd = document.createElement('td');
-            actionsTd.className = 'actions-cell';
+            actionsTd.className = 'px-3 py-3 text-center whitespace-nowrap';
             
             const editBtn = document.createElement('button');
-            editBtn.className = 'btn btn-edit';
+            editBtn.className = 'inline-flex items-center justify-center px-3 py-1.5 mr-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg text-xs font-medium hover:from-orange-500 hover:to-orange-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md';
             editBtn.innerHTML = '<i class="fas fa-edit"></i>';
             editBtn.title = 'Edit Model';
             editBtn.onclick = () => this.editModel(row);
             
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-delete';
+            deleteBtn.className = 'inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-medium hover:from-red-600 hover:to-red-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
             deleteBtn.title = 'Delete Model';
             deleteBtn.onclick = () => this.deleteModel(row);
@@ -322,12 +326,24 @@ class DieCastTracker {
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new DieCastTracker();
-});
-
-// Add some visual feedback for loading states
-document.addEventListener('DOMContentLoaded', () => {
+    
     // Add smooth scrolling
     document.documentElement.style.scrollBehavior = 'smooth';
+    
+    // Navbar scroll effect
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            if (currentScroll > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            lastScroll = currentScroll;
+        });
+    }
     
     // Add loading animation to buttons
     const buttons = document.querySelectorAll('.btn');
@@ -340,3 +356,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+

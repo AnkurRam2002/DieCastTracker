@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics - DieCast Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
+    <link href="/static/shared.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#e74c3c',
+                        secondary: '#3498db',
+                        dark: '#2c3e50',
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -235,154 +248,141 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-car"></i> DieCast Tracker
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">
-                            <i class="fas fa-home"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/add">
-                            <i class="fas fa-plus"></i> Add Model
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/analytics">
-                            <i class="fas fa-chart-line"></i> Analytics
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/series">
-                            <i class="fas fa-cogs"></i> Series Management
-                        </a>
-                    </li>
-                </ul>
+    <!-- Modern Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg shadow-lg border-b border-white/20 px-4 py-3">
+        <div class="container mx-auto max-w-7xl">
+            <div class="flex items-center justify-between">
+                <a class="flex items-center gap-2 text-white font-bold text-xl hover:text-white transition-all duration-300 hover:-translate-y-0.5" href="/">
+                    <i class="fas fa-car text-2xl bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent drop-shadow-lg"></i> DieCast Tracker
+                </a>
+                <button class="md:hidden text-white border-2 border-white/30 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors" type="button" onclick="document.getElementById('navbarNav').classList.toggle('hidden')" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="hidden md:flex md:items-center md:space-x-1" id="navbarNav">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div class="hidden md:hidden mt-4 pb-2" id="mobileNav">
+                <div class="flex flex-col space-y-2">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
+    <main class="pt-20 pb-8">
+        <div class="container mx-auto max-w-7xl px-4">
             <!-- Page Header -->
-            <div class="page-header">
-                <h1><i class="fas fa-chart-line"></i> Collection Analytics</h1>
-                <p>Comprehensive insights into your die-cast car collection</p>
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-8 mb-8 shadow-xl border border-white/20">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2"><i class="fas fa-chart-line text-purple-600"></i> Collection Analytics</h1>
+                <p class="text-gray-600">Comprehensive insights into your die-cast car collection</p>
             </div>
 
             <!-- Statistics Cards -->
-            <div class="row" id="statsCards">
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon total">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <h3 id="totalModels">0</h3>
-                        <p>Total Models</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statsCards">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-700"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl mb-4">
+                        <i class="fas fa-car"></i>
                     </div>
+                    <h3 class="text-4xl font-bold text-gray-800 mb-1" id="totalModels">0</h3>
+                    <p class="text-gray-600 font-medium">Total Models</p>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon series">
-                            <i class="fas fa-tags"></i>
-                        </div>
-                        <h3 id="totalSeries">0</h3>
-                        <p>Unique Series</p>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 to-pink-600"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 text-white flex items-center justify-center text-2xl mb-4">
+                        <i class="fas fa-tags"></i>
                     </div>
+                    <h3 class="text-4xl font-bold text-gray-800 mb-1" id="totalSeries">0</h3>
+                    <p class="text-gray-600 font-medium">Unique Series</p>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon milestone">
-                            <i class="fas fa-trophy"></i>
-                        </div>
-                        <h3 id="nextMilestone">0</h3>
-                        <p>Next Milestone</p>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-2xl mb-4">
+                        <i class="fas fa-trophy"></i>
                     </div>
+                    <h3 class="text-4xl font-bold text-gray-800 mb-1" id="nextMilestone">0</h3>
+                    <p class="text-gray-600 font-medium">Next Milestone</p>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon progress">
-                            <i class="fas fa-chart-pie"></i>
-                        </div>
-                        <h3 id="progressPercent">0%</h3>
-                        <p>Progress</p>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 text-white flex items-center justify-center text-2xl mb-4">
+                        <i class="fas fa-chart-pie"></i>
                     </div>
+                    <h3 class="text-4xl font-bold text-gray-800 mb-1" id="progressPercent">0%</h3>
+                    <p class="text-gray-600 font-medium">Progress</p>
                 </div>
             </div>
 
             <!-- Charts Row -->
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-chart-bar"></i> Series Distribution</h4>
-                        <div class="loading-spinner" id="seriesChartLoading">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                        <canvas id="seriesChart" style="display: none;"></canvas>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-purple-600"></i> Series Distribution</h4>
+                    <div class="flex-1 flex items-center justify-center" id="seriesChartLoading">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
+                    <canvas id="seriesChart" class="flex-1" style="display: none;"></canvas>
                 </div>
-                <div class="col-lg-4">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-chart-pie"></i> Collection Progress</h4>
-                        <div class="loading-spinner" id="progressChartLoading">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                        <canvas id="progressChart" style="display: none;"></canvas>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-pie text-purple-600"></i> Collection Progress</h4>
+                    <div class="flex-1 flex items-center justify-center" id="progressChartLoading">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
+                    <canvas id="progressChart" class="flex-1" style="display: none;"></canvas>
                 </div>
             </div>
 
             <!-- Collection Goals -->
-            <div class="progress-container">
-                <h4><i class="fas fa-target"></i> Collection Milestones</h4>
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-target text-purple-600"></i> Collection Milestones</h4>
                 <div id="milestoneProgress">
-                    <div class="loading-spinner">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
+                    <div class="flex items-center justify-center h-32">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Recent Additions & Insights -->
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-clock"></i> Recent Additions</h4>
-                        <div class="recent-additions-container">
-                            <div id="recentAdditions">
-                                <div class="loading-spinner">
-                                    <div class="spinner-border" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-clock text-purple-600"></i> Recent Additions</h4>
+                    <div class="max-h-72 overflow-y-auto pr-2">
+                        <div id="recentAdditions">
+                            <div class="flex items-center justify-center h-32">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-lightbulb"></i> Collection Insights</h4>
-                        <div id="modelInsights">
-                            <div class="loading-spinner">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-lightbulb text-purple-600"></i> Collection Insights</h4>
+                    <div id="modelInsights">
+                        <div class="flex items-center justify-center h-32">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                         </div>
                     </div>
                 </div>
@@ -391,13 +391,21 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
+    <footer class="bg-gray-800/80 backdrop-blur-sm text-gray-300 text-center py-6 mt-8">
+        <div class="container mx-auto max-w-7xl px-4">
             <p>&copy; 2024 DieCast Tracker. Built with FastAPI and modern web technologies.</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('button[onclick*="navbarNav"]')?.addEventListener('click', function() {
+            const mobileNav = document.getElementById('mobileNav');
+            if (window.innerWidth < 768) {
+                mobileNav?.classList.toggle('hidden');
+            }
+        });
+    </script>
     <script>
         let seriesChart, progressChart;
 
@@ -427,7 +435,7 @@
             containers.forEach(id => {
                 const container = document.getElementById(id);
                 if (container) {
-                    container.innerHTML = `<div class="text-center text-muted"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+                    container.innerHTML = `<div class="text-center text-gray-500"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
                 }
             });
         }
@@ -527,18 +535,18 @@
         function updateRecentAdditions(recent) {
             const container = document.getElementById('recentAdditions');
             if (recent.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-info-circle"></i> No recent additions</div>';
+                container.innerHTML = '<div class="text-center text-gray-500"><i class="fas fa-info-circle"></i> No recent additions</div>';
                 return;
             }
 
             container.innerHTML = recent.map(item => `
-                <div class="recent-item">
-                    <div class="d-flex justify-content-between align-items-start">
+                <div class="bg-gray-50 rounded-xl p-4 mb-3 border-l-4 border-purple-600 transition-all hover:bg-gray-100 hover:translate-x-1">
+                    <div class="flex justify-between items-start">
                         <div>
-                            <strong>${item['Model Name'] || item['S.No']}</strong><br>
-                            <small class="text-muted">${item['Series'] || 'No series'}</small>
+                            <strong class="text-gray-800">${item['Model Name'] || item['S.No']}</strong><br>
+                            <small class="text-gray-500">${item['Series'] || 'No series'}</small>
                         </div>
-                        <i class="fas fa-car text-primary"></i>
+                        <i class="fas fa-car text-purple-600"></i>
                     </div>
                 </div>
             `).join('');
@@ -549,20 +557,20 @@
             let html = '';
 
             if (insights.common_words && Object.keys(insights.common_words).length > 0) {
-                html += '<h6 class="mb-3"><i class="fas fa-tags"></i> Most Common Words:</h6>';
-                html += '<div class="mb-4">';
+                html += '<h6 class="mb-3 text-sm font-semibold text-gray-700"><i class="fas fa-tags text-purple-600"></i> Most Common Words:</h6>';
+                html += '<div class="mb-4 flex flex-wrap gap-2">';
                 Object.entries(insights.common_words).slice(0, 5).forEach(([word, count]) => {
-                    html += `<span class="insight-badge">${word} (${count})</span>`;
+                    html += `<span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-4 py-2 text-sm font-medium">${word} (${count})</span>`;
                 });
                 html += '</div>';
             }
 
             if (insights.average_name_length) {
-                html += `<h6 class="mb-3"><i class="fas fa-ruler"></i> Average Name Length:</h6>`;
-                html += `<div class="insight-badge">${insights.average_name_length.toFixed(1)} characters</div>`;
+                html += `<h6 class="mb-3 text-sm font-semibold text-gray-700"><i class="fas fa-ruler text-purple-600"></i> Average Name Length:</h6>`;
+                html += `<div class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-4 py-2 text-sm font-medium inline-block">${insights.average_name_length.toFixed(1)} characters</div>`;
             }
 
-            container.innerHTML = html || '<div class="text-center text-muted"><i class="fas fa-info-circle"></i> No insights available</div>';
+            container.innerHTML = html || '<div class="text-center text-gray-500"><i class="fas fa-info-circle"></i> No insights available</div>';
         }
 
         function updateMilestoneProgress(goals) {
@@ -580,21 +588,23 @@
                 if (isReached) itemClass += ' completed';
                 else if (isNext) itemClass += ' next';
                 
+                const bgColor = isReached ? 'from-green-400 to-green-600' : isNext ? 'from-yellow-400 to-yellow-600' : 'from-gray-400 to-gray-600';
+                const borderColor = isReached ? 'border-green-500' : isNext ? 'border-yellow-500' : 'border-gray-500';
+                
                 html += `
-                    <div class="${itemClass}">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <strong>${milestone} cars</strong>
-                                ${isReached ? '<i class="fas fa-check-circle text-success ms-2"></i>' : ''}
+                    <div class="bg-gray-50 rounded-xl p-4 mb-3 border-l-4 ${borderColor} transition-all hover:bg-gray-100 hover:translate-x-1">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center gap-2">
+                                <strong class="text-gray-800">${milestone} cars</strong>
+                                ${isReached ? '<i class="fas fa-check-circle text-green-600"></i>' : ''}
                             </div>
-                            <div>
-                                ${isNext ? '<span class="badge bg-warning text-dark">🎯 Next Goal</span>' : ''}
-                                <span class="text-muted">${Math.round(progress)}%</span>
+                            <div class="flex items-center gap-2">
+                                ${isNext ? '<span class="bg-yellow-400 text-yellow-900 rounded-full px-3 py-1 text-xs font-semibold">🎯 Next Goal</span>' : ''}
+                                <span class="text-gray-600 font-medium">${Math.round(progress)}%</span>
                             </div>
                         </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar ${isReached ? 'bg-success' : isNext ? 'bg-warning' : 'bg-secondary'}" 
-                                 style="width: ${progress}%"></div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r ${bgColor} h-2 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
                         </div>
                     </div>
                 `;
@@ -603,8 +613,23 @@
             container.innerHTML = html;
         }
 
-        // Load analytics on page load
-        document.addEventListener('DOMContentLoaded', loadAnalytics);
+        // Navbar scroll effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const navbar = document.querySelector('.navbar');
+            if (navbar) {
+                let lastScroll = 0;
+                window.addEventListener('scroll', () => {
+                    const currentScroll = window.pageYOffset;
+                    if (currentScroll > 50) {
+                        navbar.classList.add('scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                    }
+                    lastScroll = currentScroll;
+                });
+            }
+            loadAnalytics();
+        });
     </script>
 </body>
 </html>

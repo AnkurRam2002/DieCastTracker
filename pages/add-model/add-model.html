@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Model - DieCast Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/shared.css" rel="stylesheet">
+    <link href="/pages/add-model/add-model.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#e74c3c',
+                        secondary: '#3498db',
+                        dark: '#2c3e50',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- Modern Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg shadow-lg border-b border-white/20 px-4 py-3">
+        <div class="container mx-auto max-w-7xl">
+            <div class="flex items-center justify-between">
+                <a class="flex items-center gap-2 text-white font-bold text-xl hover:text-white transition-all duration-300 hover:-translate-y-0.5" href="/">
+                    <i class="fas fa-car text-2xl bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent drop-shadow-lg"></i> DieCast Tracker
+                </a>
+                <button class="md:hidden text-white border-2 border-white/30 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors" type="button" onclick="document.getElementById('navbarNav').classList.toggle('hidden')" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="hidden md:flex md:items-center md:space-x-1" id="navbarNav">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div class="hidden md:hidden mt-4 pb-2" id="mobileNav">
+                <div class="flex flex-col space-y-2">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-8">
+        <div class="container mx-auto max-w-4xl px-4">
+            <a href="/" class="inline-flex items-center gap-2 text-red-500 no-underline font-medium mb-4 hover:text-red-600 transition-colors">
+                <i class="fas fa-arrow-left"></i>
+                Back to Collection
+            </a>
+
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-red-500"></i>
+                    Add New Model
+                </h2>
+
+                <div id="success-message" class="bg-green-50 text-green-700 p-4 rounded-lg border border-green-200 mb-4 hidden"></div>
+                <div id="error-message" class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 mb-4 hidden"></div>
+
+                <form id="add-model-form">
+                    <div class="mb-6">
+                        <label for="model-name" class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-car text-red-500 mr-2"></i>
+                            Model Name *
+                        </label>
+                        <input type="text" id="model-name" name="model_name" required placeholder="e.g., 2020 Koenigsegg Jesko" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="series" class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-layer-group text-red-500 mr-2"></i>
+                            Series *
+                        </label>
+                        <select id="series" name="series" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all bg-white">
+                            <option value="">Select Series...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="subseries" class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-list text-red-500 mr-2"></i>
+                            Subseries *
+                        </label>
+                        <select id="subseries" name="subseries" required disabled class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all bg-gray-100">
+                            <option value="">Select Series first...</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-4 justify-center mt-8">
+                        <button type="button" id="cancel-btn" class="flex items-center gap-2 px-8 py-4 bg-gray-100 text-gray-700 rounded-lg font-medium border-2 border-gray-300 hover:bg-gray-200 hover:border-gray-400 transition-all duration-300 hover:-translate-y-0.5 text-lg">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-btn" class="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg text-lg">
+                            <i class="fas fa-plus"></i>
+                            Add to Collection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 text-center py-6 mt-8">
+        <div class="container mx-auto max-w-7xl px-4">
+            <p>&copy; 2024 DieCast Tracker. Built with FastAPI and modern web technologies.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('button[onclick*="navbarNav"]')?.addEventListener('click', function() {
+            const mobileNav = document.getElementById('mobileNav');
+            if (window.innerWidth < 768) {
+                mobileNav?.classList.toggle('hidden');
+            }
+        });
+    </script>
+    <script src="/pages/add-model/add-model.js"></script>
+</body>
+</html>
+

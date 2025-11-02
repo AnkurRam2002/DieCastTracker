@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Series Management - DieCast Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/shared.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#e74c3c',
+                        secondary: '#3498db',
+                        dark: '#2c3e50',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            background: transparent;
+            padding-top: 2rem;
+        }
+        
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header h1 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .page-header p {
+            color: #6c757d;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        
+        .stat-card.series::before { background: linear-gradient(90deg, #667eea, #764ba2); }
+        .stat-card.subseries::before { background: linear-gradient(90deg, #f093fb, #f5576c); }
+        .stat-card.average::before { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+        
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin: 0 auto 1rem auto;
+        }
+        
+        .stat-card .stat-icon.series { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-card .stat-icon.subseries { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .stat-card .stat-icon.average { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        
+        .stat-card h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+        }
+        
+        .stat-card h4 {
+            color: #6c757d;
+            margin: 0.5rem 0 0 0;
+            font-weight: 500;
+        }
+        
+        .series-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .series-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .series-card h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .series-card h4 i {
+            color: #667eea;
+        }
+        
+        .metadata-item {
+            background: rgba(227, 242, 253, 0.8);
+            border-radius: 15px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .subseries-item {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid #28a745;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .subseries-item:hover {
+            background: rgba(248, 249, 250, 1);
+            transform: translateX(5px);
+        }
+        
+        .subseries-item i {
+            color: #28a745;
+        }
+        
+        .cli-instructions {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .cli-instructions h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .cli-instructions h4 i {
+            color: #667eea;
+        }
+        
+        .instruction-step {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .instruction-step h6 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .instruction-step ol {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .instruction-step li {
+            margin-bottom: 0.5rem;
+            color: #6c757d;
+        }
+        
+        .instruction-step code {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .feature-list {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .feature-list h6 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-list ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .feature-list li {
+            margin-bottom: 0.5rem;
+            color: #6c757d;
+        }
+        
+        .feature-list strong {
+            color: #2c3e50;
+        }
+        
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+        
+        .series-count-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modern Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg shadow-lg border-b border-white/20 px-4 py-3">
+        <div class="container mx-auto max-w-7xl">
+            <div class="flex items-center justify-between">
+                <a class="flex items-center gap-2 text-white font-bold text-xl hover:text-white transition-all duration-300 hover:-translate-y-0.5" href="/">
+                    <i class="fas fa-car text-2xl bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent drop-shadow-lg"></i> DieCast Tracker
+                </a>
+                <button class="md:hidden text-white border-2 border-white/30 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors" type="button" onclick="document.getElementById('navbarNav').classList.toggle('hidden')" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="hidden md:flex md:items-center md:space-x-1" id="navbarNav">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div class="hidden md:hidden mt-4 pb-2" id="mobileNav">
+                <div class="flex flex-col space-y-2">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/add">
+                        <i class="fas fa-plus"></i> Add Model
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/analytics">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20" href="/series">
+                        <i class="fas fa-cogs"></i> Series Management
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-8">
+        <div class="container mx-auto max-w-7xl px-4">
+            <!-- Page Header -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-8 mb-8 shadow-xl border border-white/20">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2"><i class="fas fa-cogs text-purple-600"></i> Series Configuration Management</h1>
+                <p class="text-gray-600">Manage your die-cast car series categories and subseries</p>
+            </div>
+
+            <!-- Info Alert -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mb-8 shadow-xl border-l-4 border-blue-500 border border-white/20">
+                <h5 class="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-info-circle text-blue-500"></i> Important Note</h5>
+                <p class="text-gray-700">
+                    Series configuration updates require CLI access for security and data integrity. 
+                    To modify series options, please use the <strong>CLI management tool</strong> below.
+                </p>
+            </div>
+
+            <!-- Series Statistics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl text-center">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-700"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl mb-4 mx-auto">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h2 class="text-4xl font-bold text-gray-800 mb-1" id="mainSeriesCount">0</h2>
+                    <h4 class="text-gray-600 font-medium">Main Series</h4>
+                </div>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl text-center">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 to-pink-600"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 text-white flex items-center justify-center text-2xl mb-4 mx-auto">
+                        <i class="fas fa-list-ul"></i>
+                    </div>
+                    <h2 class="text-4xl font-bold text-gray-800 mb-1" id="subseriesCount">0</h2>
+                    <h4 class="text-gray-600 font-medium">Total Subseries</h4>
+                </div>
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl text-center">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-2xl mb-4 mx-auto">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h2 class="text-4xl font-bold text-gray-800 mb-1" id="averageSubseries">0</h2>
+                    <h4 class="text-gray-600 font-medium">Average per Series</h4>
+                </div>
+            </div>
+
+            <!-- Series Configuration Display -->
+            <div class="mb-8">
+                <h3 class="text-white text-2xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-list"></i> Current Series Configuration</h3>
+                <div id="seriesConfiguration">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLI Instructions -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
+                <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-terminal text-purple-600"></i> How to Manage Series</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gray-50 rounded-xl p-6 border-l-4 border-purple-600">
+                        <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-mouse-pointer text-purple-600"></i> Option 1: Main CLI Menu</h6>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li>Open terminal/command prompt</li>
+                            <li>Navigate to your DieCast Tracker folder</li>
+                            <li>Run: <code class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">python main.py</code></li>
+                            <li>Select option <strong>9</strong> for Series Management</li>
+                            <li>Follow the interactive menu</li>
+                        </ol>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-6 border-l-4 border-purple-600">
+                        <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-bolt text-purple-600"></i> Option 2: Direct Access</h6>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li>Open terminal/command prompt</li>
+                            <li>Navigate to your DieCast Tracker folder</li>
+                            <li>Run: <code class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">python scripts/manage_series.py</code></li>
+                            <li>Use the interactive management interface</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-xl p-6 mt-4">
+                    <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-tools text-purple-600"></i> Available Management Options:</h6>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong class="text-gray-800">Add Main Series:</strong> Create new series categories</li>
+                        <li><strong class="text-gray-800">Add Subseries:</strong> Add new subseries to existing categories</li>
+                        <li><strong class="text-gray-800">Remove Subseries:</strong> Remove outdated subseries</li>
+                        <li><strong class="text-gray-800">Edit Metadata:</strong> Update descriptions, prices, and rarity</li>
+                        <li><strong class="text-gray-800">Export Configuration:</strong> Save changes to the system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800/80 backdrop-blur-sm text-gray-300 text-center py-6 mt-8">
+        <div class="container mx-auto max-w-7xl px-4">
+            <p>&copy; 2024 DieCast Tracker. Built with FastAPI and modern web technologies.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('button[onclick*="navbarNav"]')?.addEventListener('click', function() {
+            const mobileNav = document.getElementById('mobileNav');
+            if (window.innerWidth < 768) {
+                mobileNav?.classList.toggle('hidden');
+            }
+        });
+    </script>
+    <script>
+        async function loadSeriesConfiguration() {
+            try {
+                const response = await fetch('/api/series');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySeriesConfiguration(data.series_options, data.series_metadata);
+                    updateStatistics(data.series_options);
+                } else {
+                    console.error('Failed to load series configuration:', data.error);
+                    showError('Failed to load series configuration');
+                }
+            } catch (error) {
+                console.error('Error loading series configuration:', error);
+                showError('Error loading series configuration');
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('seriesConfiguration');
+            container.innerHTML = `<div class="text-center text-white"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+        }
+
+        function displaySeriesConfiguration(seriesOptions, seriesMetadata) {
+            const container = document.getElementById('seriesConfiguration');
+            let html = '';
+
+            Object.entries(seriesOptions).forEach(([mainSeries, subseriesList]) => {
+                const metadata = seriesMetadata[mainSeries] || {};
+                
+                html += `
+                    <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl border-l-4 border-purple-600 border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-tag text-purple-600"></i> ${mainSeries}
+                            <span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-3 py-1 text-sm font-semibold ml-2">${subseriesList.length} subseries</span>
+                        </h4>
+                        
+                        ${metadata.description ? `
+                            <div class="bg-blue-50 rounded-xl p-4 mb-3 border-l-3 border-blue-500">
+                                <strong class="text-gray-800 flex items-center gap-2 mb-1"><i class="fas fa-info-circle text-blue-500"></i> Description:</strong>
+                                <p class="text-gray-700">${metadata.description}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${metadata.price_range ? `
+                            <div class="bg-blue-50 rounded-xl p-4 mb-3 border-l-3 border-blue-500">
+                                <strong class="text-gray-800 flex items-center gap-2 mb-1"><i class="fas fa-rupee-sign text-blue-500"></i> Price Range:</strong>
+                                <p class="text-gray-700">${metadata.price_range}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${metadata.rarity ? `
+                            <div class="bg-blue-50 rounded-xl p-4 mb-3 border-l-3 border-blue-500">
+                                <strong class="text-gray-800 flex items-center gap-2 mb-1"><i class="fas fa-star text-blue-500"></i> Rarity:</strong>
+                                <p class="text-gray-700">${metadata.rarity}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <h6 class="text-base font-semibold text-gray-800 mt-6 mb-3 flex items-center gap-2"><i class="fas fa-list text-purple-600"></i> Subseries (${subseriesList.length}):</h6>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                `;
+                
+                subseriesList.forEach(subseries => {
+                    html += `
+                        <div class="bg-gray-50 rounded-xl p-4 border-l-3 border-green-500 transition-all hover:bg-gray-100 hover:translate-x-1 flex items-center gap-2">
+                            <i class="fas fa-car text-green-600"></i>
+                            <span class="text-gray-700">${subseries}</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateStatistics(seriesOptions) {
+            const mainSeriesCount = Object.keys(seriesOptions).length;
+            const totalSubseries = Object.values(seriesOptions).reduce((sum, list) => sum + list.length, 0);
+            const averageSubseries = mainSeriesCount > 0 ? (totalSubseries / mainSeriesCount).toFixed(1) : 0;
+
+            document.getElementById('mainSeriesCount').textContent = mainSeriesCount;
+            document.getElementById('subseriesCount').textContent = totalSubseries;
+            document.getElementById('averageSubseries').textContent = averageSubseries;
+        }
+
+        // Navbar scroll effect and load series configuration on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const navbar = document.querySelector('.navbar');
+            if (navbar) {
+                let lastScroll = 0;
+                window.addEventListener('scroll', () => {
+                    const currentScroll = window.pageYOffset;
+                    if (currentScroll > 50) {
+                        navbar.classList.add('scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                    }
+                    lastScroll = currentScroll;
+                });
+            }
+            loadSeriesConfiguration();
+        });
+    </script>
+</body>
+</html>

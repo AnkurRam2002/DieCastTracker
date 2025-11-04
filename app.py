@@ -15,6 +15,7 @@ from typing import List, Dict, Any
 import uvicorn
 from openpyxl import load_workbook
 import sys
+import json
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
 from scripts.backup_utils import create_backup
 from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA, get_all_series, get_subseries, get_series_info
@@ -34,6 +35,131 @@ templates = Jinja2Templates(directory="pages")
 
 # Path to the Excel file
 EXCEL_FILE_PATH = os.path.join("data", "HW_list.xlsx")
+
+# Path to the series config file
+SERIES_CONFIG_PATH = os.path.join("scripts", "series_config.py")
+
+def save_series_config():
+    """Save the current SERIES_OPTIONS and SERIES_METADATA to series_config.py file"""
+    try:
+        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        
+        # Create backup of the config file
+        if os.path.exists(SERIES_CONFIG_PATH):
+            backup_path = SERIES_CONFIG_PATH + ".backup"
+            import shutil
+            shutil.copy2(SERIES_CONFIG_PATH, backup_path)
+        
+        # Format the dictionaries for Python code
+        # Format SERIES_OPTIONS - maintain single line format like original
+        series_options_items = []
+        for series, subseries_list in SERIES_OPTIONS.items():
+            # Use repr() for proper string escaping
+            subseries_repr = [repr(sub) for sub in subseries_list]
+            series_options_items.append(f"{repr(series)}: [{', '.join(subseries_repr)}]")
+        series_options_str = "{" + ", ".join(series_options_items) + "}"
+        
+        # Format SERIES_METADATA - maintain single line format like original
+        series_metadata_items = []
+        for series, metadata in SERIES_METADATA.items():
+            desc = repr(metadata.get('description', 'No description available'))
+            price = repr(metadata.get('price_range', 'Varies'))
+            rarity = repr(metadata.get('rarity', 'Unknown'))
+            series_metadata_items.append(f"{repr(series)}: {{'description': {desc}, 'price_range': {price}, 'rarity': {rarity}}}")
+        series_metadata_str = "{" + ", ".join(series_metadata_items) + "}"
+        
+        # Generate the complete file content
+        config_content = f'''#!/usr/bin/env python3
+"""
+DieCastTracker - Series Configuration
+Centralized configuration for Hot Wheels series and subseries options
+"""
+
+# Series options as a nested dictionary
+SERIES_OPTIONS = {series_options_str}
+
+# Series metadata for additional information
+SERIES_METADATA = {series_metadata_str}
+
+def get_all_series():
+    """Get all main series categories"""
+    return list(SERIES_OPTIONS.keys())
+
+def get_subseries(main_series):
+    """Get subseries for a specific main series"""
+    return SERIES_OPTIONS.get(main_series, [])
+
+def get_all_subseries():
+    """Get all subseries as a flat list"""
+    all_subseries = []
+    for subseries_list in SERIES_OPTIONS.values():
+        all_subseries.extend(subseries_list)
+    return all_subseries
+
+def get_series_info(main_series):
+    """Get metadata information for a main series"""
+    return SERIES_METADATA.get(main_series, {{}})
+
+def find_main_series_for_subseries(subseries):
+    """Find which main series a subseries belongs to"""
+    for main_series, subseries_list in SERIES_OPTIONS.items():
+        if subseries in subseries_list:
+            return main_series
+    return None
+
+def validate_series_combination(main_series, subseries):
+    """Validate if a main series and subseries combination is valid"""
+    if main_series not in SERIES_OPTIONS:
+        return False
+    return subseries in SERIES_OPTIONS[main_series]
+
+def get_series_count():
+    """Get total count of series and subseries"""
+    main_count = len(SERIES_OPTIONS)
+    sub_count = sum(len(subseries_list) for subseries_list in SERIES_OPTIONS.values())
+    return main_count, sub_count
+
+def print_series_summary():
+    """Print a summary of all series options"""
+    print("📊 SERIES CONFIGURATION SUMMARY")
+    print("=" * 50)
+    
+    main_count, sub_count = get_series_count()
+    print(f"Main Series Categories: {{main_count}}")
+    print(f"Total Subseries: {{sub_count}}")
+    print()
+    
+    for main_series, subseries_list in SERIES_OPTIONS.items():
+        metadata = get_series_info(main_series)
+        print(f"🏷️  {{main_series}} ({{len(subseries_list)}} subseries)")
+        if metadata:
+            print(f"   Description: {{metadata.get('description', 'N/A')}}")
+            print(f"   Price Range: {{metadata.get('price_range', 'N/A')}}")
+            print(f"   Rarity: {{metadata.get('rarity', 'N/A')}}")
+        print(f"   Subseries: {{', '.join(subseries_list)}}")
+        print()
+
+if __name__ == "__main__":
+    # Test the configuration
+    print_series_summary()
+    
+    # Test some functions
+    print("🔍 TESTING FUNCTIONS:")
+    print(f"All main series: {{get_all_series()}}")
+    print(f"Mainlines subseries: {{get_subseries('Mainlines')}}")
+    print(f"Total series count: {{get_series_count()}}")
+    print(f"Find main series for 'Ultra Hots': {{find_main_series_for_subseries('Ultra Hots')}}")
+    print(f"Validate 'Mainlines' + 'Mainlines': {{validate_series_combination('Mainlines', 'Mainlines')}}")
+'''
+        
+        # Write to file
+        with open(SERIES_CONFIG_PATH, 'w', encoding='utf-8') as f:
+            f.write(config_content)
+        
+        return True
+    except Exception as e:
+        print(f"Error saving series config: {e}")
+        return False
 
 # Data model for adding new cars
 class NewCarModel(BaseModel):
@@ -68,6 +194,12 @@ class RenameSubseriesModel(BaseModel):
     main_series: str
     old_name: str
     new_name: str
+
+class AddSeriesModel(BaseModel):
+    series_name: str
+    description: str = None
+    price_range: str = None
+    rarity: str = None
 
 class SeriesMetadataModel(BaseModel):
     main_series: str
@@ -555,19 +687,22 @@ async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
         # Import series config functions
         from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
         
-        # Note: This will only update the in-memory copy, not the actual file
-        # For full persistence, we'd need to modify series_config.py file
-        # For now, we'll provide a message about this limitation
         if update.action == 'add':
             if update.main_series not in SERIES_OPTIONS:
                 SERIES_OPTIONS[update.main_series] = []
             if update.subseries not in SERIES_OPTIONS[update.main_series]:
                 SERIES_OPTIONS[update.main_series].append(update.subseries)
-                return JSONResponse(content={
-                    "success": True,
-                    "message": f"Subseries '{update.subseries}' added to '{update.main_series}' successfully!",
-                    "note": "Changes are temporary. Use CLI to persist changes to file."
-                })
+                # Save to file
+                if save_series_config():
+                    return JSONResponse(content={
+                        "success": True,
+                        "message": f"Subseries '{update.subseries}' added to '{update.main_series}' successfully!"
+                    })
+                else:
+                    return JSONResponse(
+                        status_code=500,
+                        content={"success": False, "error": "Failed to save configuration to file"}
+                    )
             else:
                 return JSONResponse(
                     status_code=400,
@@ -577,11 +712,17 @@ async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
             if update.main_series in SERIES_OPTIONS:
                 if update.subseries in SERIES_OPTIONS[update.main_series]:
                     SERIES_OPTIONS[update.main_series].remove(update.subseries)
-                    return JSONResponse(content={
-                        "success": True,
-                        "message": f"Subseries '{update.subseries}' removed from '{update.main_series}' successfully!",
-                        "note": "Changes are temporary. Use CLI to persist changes to file."
-                    })
+                    # Save to file
+                    if save_series_config():
+                        return JSONResponse(content={
+                            "success": True,
+                            "message": f"Subseries '{update.subseries}' removed from '{update.main_series}' successfully!"
+                        })
+                    else:
+                        return JSONResponse(
+                            status_code=500,
+                            content={"success": False, "error": "Failed to save configuration to file"}
+                        )
         
         return JSONResponse(
             status_code=400,
@@ -619,11 +760,17 @@ async def rename_series(rename: RenameSeriesModel) -> JSONResponse:
         if rename.old_name in SERIES_METADATA:
             SERIES_METADATA[rename.new_name] = SERIES_METADATA.pop(rename.old_name)
         
-        return JSONResponse(content={
-            "success": True,
-            "message": f"Series '{rename.old_name}' renamed to '{rename.new_name}' successfully!",
-            "note": "Changes are temporary. Use CLI to persist changes to file."
-        })
+        # Save to file
+        if save_series_config():
+            return JSONResponse(content={
+                "success": True,
+                "message": f"Series '{rename.old_name}' renamed to '{rename.new_name}' successfully!"
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to save configuration to file"}
+            )
     except Exception as e:
         return JSONResponse(
             status_code=500,
@@ -658,11 +805,72 @@ async def rename_subseries(rename: RenameSubseriesModel) -> JSONResponse:
         index = SERIES_OPTIONS[rename.main_series].index(rename.old_name)
         SERIES_OPTIONS[rename.main_series][index] = rename.new_name
         
-        return JSONResponse(content={
-            "success": True,
-            "message": f"Subseries '{rename.old_name}' renamed to '{rename.new_name}' successfully!",
-            "note": "Changes are temporary. Use CLI to persist changes to file."
-        })
+        # Save to file
+        if save_series_config():
+            return JSONResponse(content={
+                "success": True,
+                "message": f"Subseries '{rename.old_name}' renamed to '{rename.new_name}' successfully!"
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to save configuration to file"}
+            )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/series/add")
+async def add_series(series: AddSeriesModel) -> JSONResponse:
+    """Add a new main series"""
+    try:
+        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        
+        series_name = series.series_name.strip()
+        
+        if not series_name:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Series name cannot be empty"}
+            )
+        
+        if series_name in SERIES_OPTIONS:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": f"Series '{series_name}' already exists"}
+            )
+        
+        # Add the new series
+        SERIES_OPTIONS[series_name] = []
+        
+        # Add metadata if provided
+        if series.description or series.price_range or series.rarity:
+            SERIES_METADATA[series_name] = {
+                "description": series.description or "No description available",
+                "price_range": series.price_range or "Varies",
+                "rarity": series.rarity or "Unknown"
+            }
+        else:
+            # Add default metadata if none provided
+            SERIES_METADATA[series_name] = {
+                "description": "No description available",
+                "price_range": "Varies",
+                "rarity": "Unknown"
+            }
+        
+        # Save to file
+        if save_series_config():
+            return JSONResponse(content={
+                "success": True,
+                "message": f"Series '{series_name}' added successfully!"
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to save configuration to file"}
+            )
     except Exception as e:
         return JSONResponse(
             status_code=500,

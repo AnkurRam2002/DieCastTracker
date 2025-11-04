@@ -356,14 +356,6 @@
                 <p class="text-gray-600">Manage your die-cast car series categories and subseries</p>
             </div>
 
-            <!-- Info Alert -->
-            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mb-8 shadow-xl border-l-4 border-blue-500 border border-white/20">
-                <h5 class="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-info-circle text-blue-500"></i> Important Note</h5>
-                <p class="text-gray-700">
-                    Series configuration updates require CLI access for security and data integrity. 
-                    To modify series options, please use the <strong>CLI management tool</strong> below.
-                </p>
-            </div>
 
             <!-- Series Statistics -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -406,7 +398,10 @@
             <!-- Action Buttons -->
             <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
                 <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-tools text-purple-600"></i> Quick Actions</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <button onclick="showAddSeriesModal()" class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+                        <i class="fas fa-plus-circle"></i> Add Series
+                    </button>
                     <button onclick="showAddSubseriesModal()" class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
                         <i class="fas fa-plus"></i> Add Subseries
                     </button>
@@ -419,44 +414,54 @@
                 </div>
             </div>
 
-            <!-- CLI Instructions -->
-            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
-                <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-terminal text-purple-600"></i> How to Manage Series</h4>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-gray-50 rounded-xl p-6 border-l-4 border-purple-600">
-                        <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-mouse-pointer text-purple-600"></i> Option 1: Main CLI Menu</h6>
-                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                            <li>Open terminal/command prompt</li>
-                            <li>Navigate to your DieCast Tracker folder</li>
-                            <li>Run: <code class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">python main.py</code></li>
-                            <li>Select option <strong>9</strong> for Series Management</li>
-                            <li>Follow the interactive menu</li>
-                        </ol>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-6 border-l-4 border-purple-600">
-                        <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-bolt text-purple-600"></i> Option 2: Direct Access</h6>
-                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                            <li>Open terminal/command prompt</li>
-                            <li>Navigate to your DieCast Tracker folder</li>
-                            <li>Run: <code class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">python scripts/manage_series.py</code></li>
-                            <li>Use the interactive management interface</li>
-                        </ol>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-50 rounded-xl p-6 mt-4">
-                    <h6 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-tools text-purple-600"></i> Available Management Options:</h6>
-                    <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li><strong class="text-gray-800">Add Main Series:</strong> Create new series categories</li>
-                        <li><strong class="text-gray-800">Add Subseries:</strong> Add new subseries to existing categories</li>
-                        <li><strong class="text-gray-800">Remove Subseries:</strong> Remove outdated subseries</li>
-                        <li><strong class="text-gray-800">Edit Metadata:</strong> Update descriptions, prices, and rarity</li>
-                        <li><strong class="text-gray-800">Export Configuration:</strong> Save changes to the system</li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </main>
+
+    <!-- Add Series Modal -->
+    <div id="add-series-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h2 class="text-xl font-bold">Add New Series</h2>
+                <button onclick="closeModal('add-series-modal')" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="add-series-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Series Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="add-series-name" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="Enter series name" required />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                    <textarea id="add-series-description" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500" rows="2" placeholder="Enter description"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Price Range (Optional)</label>
+                    <input type="text" id="add-series-price" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500" placeholder="e.g., ₹300, ₹500-₹800" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Rarity (Optional)</label>
+                    <select id="add-series-rarity" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500">
+                        <option value="">Select rarity...</option>
+                        <option value="Common">Common</option>
+                        <option value="Uncommon">Uncommon</option>
+                        <option value="Rare">Rare</option>
+                        <option value="Very Rare">Very Rare</option>
+                        <option value="Ultra Rare">Ultra Rare</option>
+                    </select>
+                </div>
+                <div id="add-series-message" class="hidden"></div>
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-indigo-700 transition-all">
+                        <i class="fas fa-plus-circle mr-2"></i> Add Series
+                    </button>
+                    <button type="button" onclick="closeModal('add-series-modal')" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all border-2 border-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Add Subseries Modal -->
     <div id="add-subseries-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
@@ -624,6 +629,15 @@
             document.getElementById(modalId).classList.remove('hidden');
         }
 
+        function showAddSeriesModal() {
+            document.getElementById('add-series-name').value = '';
+            document.getElementById('add-series-description').value = '';
+            document.getElementById('add-series-price').value = '';
+            document.getElementById('add-series-rarity').value = '';
+            document.getElementById('add-series-message').classList.add('hidden');
+            showModal('add-series-modal');
+        }
+
         function showAddSubseriesModal(preselectedSeries = null) {
             const select = document.getElementById('add-subseries-main-series');
             select.innerHTML = '<option value="">Select a series...</option>';
@@ -715,6 +729,46 @@
         }
 
         // Form handlers
+        document.getElementById('add-series-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const seriesName = document.getElementById('add-series-name').value.trim();
+            const description = document.getElementById('add-series-description').value.trim();
+            const priceRange = document.getElementById('add-series-price').value.trim();
+            const rarity = document.getElementById('add-series-rarity').value;
+            
+            if (!seriesName) {
+                showMessage('add-series-message', 'Please enter a series name', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/series/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        series_name: seriesName,
+                        description: description || null,
+                        price_range: priceRange || null,
+                        rarity: rarity || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('add-series-message', result.message);
+                    setTimeout(() => {
+                        closeModal('add-series-modal');
+                        loadSeriesConfiguration();
+                    }, 1500);
+                } else {
+                    showMessage('add-series-message', result.error || 'Failed to add series', true);
+                }
+            } catch (error) {
+                showMessage('add-series-message', 'Error: ' + error.message, true);
+            }
+        });
+
         document.getElementById('add-subseries-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const mainSeries = document.getElementById('add-subseries-main-series').value;

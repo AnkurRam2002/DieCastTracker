@@ -33,25 +33,25 @@ class DieCastTrackerApp:
     
     def print_banner(self):
         """Print the application banner"""
-        print("🚗" + "="*50 + "🚗")
+        print("="*52)
         print("    HOT WHEELS DIE-CAST TRACKER")
         print("    Collection Management System")
-        print("🚗" + "="*50 + "🚗")
+        print("="*52)
         print()
     
     def print_menu(self):
         """Print the main menu"""
-        DisplayUtils.print_section("📋 MAIN MENU")
-        print("1. 🆕 Add New Model")
-        print("2. ✏️  Update Model")
-        print("3. 🗑️  Delete Model")
-        print("4. 🔍 Search Models")
-        print("5. 📊 View Statistics")
-        print("6. ➕ Add New Field")
-        print("7. 📁 Open Excel File")
-        print("8. ❓ Help & Info")
-        print("9. 🔧 Manage Series Configuration")
-        print("10. 🚪 Exit")
+        DisplayUtils.print_section("MAIN MENU")
+        print("1. Add New Model")
+        print("2. Update Model")
+        print("3. Delete Model")
+        print("4. Search Models")
+        print("5. View Statistics")
+        print("6. Add New Field")
+        print("7. Open Excel File")
+        print("8. Help & Info")
+        print("9. Manage Series Configuration")
+        print("10. Exit")
     
     def run_script(self, script_name: str, script_display_name: str):
         """Run a Python script with improved error handling"""
@@ -97,21 +97,21 @@ class DieCastTrackerApp:
     
     def show_help(self):
         """Show help and information"""
-        DisplayUtils.print_header("📖 HELP & INFORMATION", 50)
-        print("🚗 DieCastTracker - Hot Wheels Collection Manager")
+        DisplayUtils.print_header("HELP & INFORMATION", 50)
+        print("DieCastTracker - Hot Wheels Collection Manager")
         print()
-        print("📁 Available Scripts:")
+        print("Available Scripts:")
         for script_file, description in self.script_mapping.values():
             print(f"  • {script_file:<20} - {description}")
         print("  • manage_series.py      - Manage Series Configuration")
         print()
-        print("💡 Tips:")
+        print("Tips:")
         print("  • Use shortcuts like 'Car Name#13' when adding models")
         print("  • Statistics show your collection progress and insights")
         print("  • Excel file is automatically created if it doesn't exist")
         print("  • All operations create automatic backups for safety")
         print()
-        print("🔧 Technical Info:")
+        print("Technical Info:")
         print(f"  • Python Version: {sys.version.split()[0]}")
         print(f"  • Working Directory: {os.getcwd()}")
         print(f"  • Current Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -147,12 +147,12 @@ class DieCastTrackerApp:
                     print("\n" + "="*60 + "\n")
                     
                 elif choice == '10':
-                    print("\n👋 Thank you for using DieCastTracker!")
-                    print("🚗 Happy collecting!")
+                    print("\nThank you for using DieCastTracker!")
+                    print("Happy collecting!")
                     break
                     
             except KeyboardInterrupt:
-                print("\n\n👋 Goodbye! Thanks for using DieCastTracker!")
+                print("\n\nGoodbye! Thanks for using DieCastTracker!")
                 break
             except Exception as e:
                 print_error(f"An error occurred: {e}")

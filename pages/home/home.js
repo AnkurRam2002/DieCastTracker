@@ -3,12 +3,35 @@ class DieCastTracker {
     constructor() {
         this.currentData = [];
         this.filteredData = [];
+        this.columns = [];
+        this.currentEditingRow = null;
+        this.currentDeletingRow = null;
         this.init();
     }
 
     init() {
         this.bindEvents();
         this.loadData();
+        this.setupModals();
+    }
+
+    setupModals() {
+        // Edit modal
+        document.getElementById('close-edit-modal').addEventListener('click', () => this.closeEditModal());
+        document.getElementById('cancel-edit').addEventListener('click', () => this.closeEditModal());
+        document.getElementById('edit-form').addEventListener('submit', (e) => this.handleEditSubmit(e));
+        
+        // Delete modal
+        document.getElementById('cancel-delete').addEventListener('click', () => this.closeDeleteModal());
+        document.getElementById('confirm-delete').addEventListener('click', () => this.confirmDelete());
+        
+        // Close modals on backdrop click
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-modal') this.closeEditModal();
+        });
+        document.getElementById('delete-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'delete-modal') this.closeDeleteModal();
+        });
     }
 
     bindEvents() {
@@ -42,6 +65,7 @@ class DieCastTracker {
             if (result.success) {
                 this.currentData = result.data;
                 this.filteredData = [...this.currentData];
+                this.columns = result.columns || [];
                 this.updateStats(result);
                 this.renderTable(this.filteredData, result.columns);
                 this.hideLoading();
@@ -243,15 +267,68 @@ class DieCastTracker {
     }
 
     async editModel(row) {
-        const serialNumber = row['S.No'];
-        const currentModelName = row['Model Name'] || '';
-        const currentSeries = row['Series'] || '';
+        this.currentEditingRow = row;
+        this.showEditModal(row);
+    }
+
+    showEditModal(row) {
+        const modal = document.getElementById('edit-modal');
+        const formFields = document.getElementById('edit-form-fields');
         
-        const newModelName = prompt(`Edit Model Name (current: ${currentModelName}):`, currentModelName);
-        if (newModelName === null) return; // User cancelled
+        // Clear previous fields
+        formFields.innerHTML = '';
         
-        const newSeries = prompt(`Edit Series (current: ${currentSeries}):`, currentSeries);
-        if (newSeries === null) return; // User cancelled
+        // Generate form fields for all columns except S.No
+        this.columns.forEach(column => {
+            if (column === 'S.No') return; // Skip serial number
+            
+            const value = row[column] || '';
+            const fieldDiv = document.createElement('div');
+            fieldDiv.innerHTML = `
+                <label for="edit-${column}" class="block text-sm font-medium text-gray-700 mb-1">
+                    ${column}
+                </label>
+                <input 
+                    type="text" 
+                    id="edit-${column}" 
+                    name="${column}" 
+                    value="${this.escapeHtml(String(value))}"
+                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
+                />
+            `;
+            formFields.appendChild(fieldDiv.firstElementChild);
+        });
+        
+        modal.classList.remove('hidden');
+    }
+
+    closeEditModal() {
+        const modal = document.getElementById('edit-modal');
+        modal.classList.add('hidden');
+        this.currentEditingRow = null;
+    }
+
+    async handleEditSubmit(event) {
+        event.preventDefault();
+        
+        if (!this.currentEditingRow) return;
+        
+        const formData = new FormData(event.target);
+        const updates = {};
+        
+        // Collect all field updates
+        this.columns.forEach(column => {
+            if (column === 'S.No') return;
+            const input = document.getElementById(`edit-${column}`);
+            if (input && input.value !== String(this.currentEditingRow[column] || '')) {
+                updates[column] = input.value.trim();
+            }
+        });
+        
+        if (Object.keys(updates).length === 0) {
+            alert('No changes to save');
+            return;
+        }
         
         try {
             const response = await fetch('/api/update-model', {
@@ -260,42 +337,80 @@ class DieCastTracker {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    serial_number: serialNumber,
-                    model_name: newModelName.trim(),
-                    subseries: newSeries.trim()
+                    serial_number: this.currentEditingRow['S.No'],
+                    updates: updates
                 })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                alert('✅ ' + result.message);
+                alert('Success: ' + result.message);
+                this.closeEditModal();
                 this.loadData(); // Refresh the data
             } else {
-                alert('❌ Error: ' + result.error);
+                alert('Error: ' + result.error);
             }
         } catch (error) {
             console.error('Error updating model:', error);
-            alert('❌ Failed to update model: ' + error.message);
+            alert('Failed to update model: ' + error.message);
         }
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     async deleteModel(row) {
-        const serialNumber = row['S.No'];
+        this.currentDeletingRow = row;
+        this.showDeleteModal(row);
+    }
+
+    showDeleteModal(row) {
+        const modal = document.getElementById('delete-modal');
+        const modelInfo = document.getElementById('delete-model-info');
+        const confirmInput = document.getElementById('delete-confirm-input');
+        
+        // Display model information
         const modelName = row['Model Name'] || 'Unknown';
+        const serialNumber = row['S.No'];
         
-        const confirmMessage = `⚠️ Are you sure you want to delete this model?\n\nModel: ${modelName}\nSerial Number: ${serialNumber}\n\nThis action cannot be undone!`;
+        modelInfo.innerHTML = `
+            <div class="space-y-1">
+                <div><strong>Serial Number:</strong> ${serialNumber}</div>
+                <div><strong>Model Name:</strong> ${this.escapeHtml(String(modelName))}</div>
+                ${this.columns.filter(c => c !== 'S.No' && c !== 'Model Name' && row[c]).map(c => 
+                    `<div><strong>${c}:</strong> ${this.escapeHtml(String(row[c]))}</div>`
+                ).join('')}
+            </div>
+        `;
         
-        if (!confirm(confirmMessage)) {
-            return; // User cancelled
-        }
+        // Clear confirmation input
+        confirmInput.value = '';
         
-        // Double confirmation
-        const doubleConfirm = prompt('Type "DELETE" to confirm deletion:');
-        if (doubleConfirm !== 'DELETE') {
-            alert('❌ Deletion cancelled.');
+        modal.classList.remove('hidden');
+        confirmInput.focus();
+    }
+
+    closeDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('hidden');
+        this.currentDeletingRow = null;
+        document.getElementById('delete-confirm-input').value = '';
+    }
+
+    async confirmDelete() {
+        if (!this.currentDeletingRow) return;
+        
+        const confirmInput = document.getElementById('delete-confirm-input');
+        if (confirmInput.value !== 'DELETE') {
+            alert('Please type DELETE to confirm');
             return;
         }
+        
+        const serialNumber = this.currentDeletingRow['S.No'];
         
         try {
             const response = await fetch('/api/delete-model', {
@@ -311,14 +426,15 @@ class DieCastTracker {
             const result = await response.json();
 
             if (result.success) {
-                alert('✅ ' + result.message);
+                alert('Success: ' + result.message);
+                this.closeDeleteModal();
                 this.loadData(); // Refresh the data
             } else {
-                alert('❌ Error: ' + result.error);
+                alert('Error: ' + result.error);
             }
         } catch (error) {
             console.error('Error deleting model:', error);
-            alert('❌ Failed to delete model: ' + error.message);
+            alert('Failed to delete model: ' + error.message);
         }
     }
 }

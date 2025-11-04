@@ -44,13 +44,15 @@ class NewCarModel(BaseModel):
 # Data model for updating cars
 class UpdateCarModel(BaseModel):
     serial_number: int
-    model_name: str = None
-    series: str = None
-    subseries: str = None
+    updates: Dict[str, Any]  # Dictionary of field_name: new_value pairs
 
 # Data model for deleting cars
 class DeleteCarModel(BaseModel):
     serial_number: int
+
+# Data model for adding new field
+class AddFieldModel(BaseModel):
+    field_name: str
 
 # Data model for series management
 class SeriesUpdateModel(BaseModel):
@@ -87,6 +89,11 @@ async def home(request: Request):
 async def add_model_page(request: Request):
     """Add model page with dropdown form"""
     return templates.TemplateResponse("add-model/add-model.html", {"request": request})
+
+@app.get("/add-field", response_class=HTMLResponse)
+async def add_field_page(request: Request):
+    """Add field page"""
+    return templates.TemplateResponse("add-field/add-field.html", {"request": request})
 
 @app.get("/api/data")
 async def get_data() -> JSONResponse:
@@ -279,11 +286,14 @@ async def update_model(model: UpdateCarModel) -> JSONResponse:
                 content={"success": False, "error": f"Model with serial number {model.serial_number} not found"}
             )
         
+        # Get headers from first row
+        headers = [cell.value for cell in ws[1]]
+        
         # Update the fields that are provided
-        if model.model_name is not None:
-            ws.cell(row=target_row, column=2, value=model.model_name.strip())
-        if model.subseries is not None:
-            ws.cell(row=target_row, column=3, value=model.subseries)
+        for field_name, new_value in model.updates.items():
+            if field_name in headers:
+                col_index = headers.index(field_name) + 1
+                ws.cell(row=target_row, column=col_index, value=str(new_value).strip() if new_value else "")
         
         # Save workbook
         wb.save(EXCEL_FILE_PATH)
@@ -459,16 +469,110 @@ async def get_series_config() -> JSONResponse:
             content={"success": False, "error": str(e)}
         )
 
+@app.post("/api/add-field")
+async def add_field(field: AddFieldModel) -> JSONResponse:
+    """Add a new field/column to the Excel file"""
+    try:
+        # Create backup before adding field
+        if not create_backup(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Failed to create backup"}
+            )
+        
+        # Validate field name
+        field_name = field.field_name.strip()
+        if not field_name:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Field name cannot be empty"}
+            )
+        
+        if len(field_name) > 50:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Field name is too long (max 50 characters)"}
+            )
+        
+        # Check for invalid characters
+        invalid_chars = ['/', '\\', '?', '*', '[', ']', ':', ';']
+        if any(char in field_name for char in invalid_chars):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": f"Field name contains invalid characters: {', '.join(invalid_chars)}"}
+            )
+        
+        # Load workbook
+        if not os.path.exists(EXCEL_FILE_PATH):
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": "Excel file not found"}
+            )
+        
+        wb = load_workbook(EXCEL_FILE_PATH)
+        ws = wb.active
+        
+        # Check if field already exists
+        headers = [cell.value for cell in ws[1]]
+        if field_name in headers:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": f"Field '{field_name}' already exists"}
+            )
+        
+        # Add the new field
+        new_column = len(headers) + 1
+        ws.cell(row=1, column=new_column, value=field_name)
+        
+        # Save workbook
+        wb.save(EXCEL_FILE_PATH)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Field '{field_name}' added successfully!",
+            "column_index": new_column
+        })
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
 @app.post("/api/series/update")
 async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
     """Update series configuration"""
     try:
-        # This would require modifying the series_config.py file
-        # For now, return a message that this feature needs CLI access
-        return JSONResponse(content={
-            "success": False,
-            "message": "Series configuration updates require CLI access. Please use the manage_series.py script or option 9 in the main CLI menu."
-        })
+        # Import series config functions
+        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        
+        # Note: This will only update the in-memory copy, not the actual file
+        # For full persistence, we'd need to modify series_config.py file
+        # For now, we'll provide a message about this limitation
+        if update.action == 'add':
+            if update.main_series not in SERIES_OPTIONS:
+                SERIES_OPTIONS[update.main_series] = []
+            if update.subseries not in SERIES_OPTIONS[update.main_series]:
+                SERIES_OPTIONS[update.main_series].append(update.subseries)
+                return JSONResponse(content={
+                    "success": True,
+                    "message": f"Subseries '{update.subseries}' added to '{update.main_series}' successfully!",
+                    "note": "Changes are temporary. Use CLI to persist changes to file."
+                })
+        elif update.action == 'remove':
+            if update.main_series in SERIES_OPTIONS:
+                if update.subseries in SERIES_OPTIONS[update.main_series]:
+                    SERIES_OPTIONS[update.main_series].remove(update.subseries)
+                    return JSONResponse(content={
+                        "success": True,
+                        "message": f"Subseries '{update.subseries}' removed from '{update.main_series}' successfully!",
+                        "note": "Changes are temporary. Use CLI to persist changes to file."
+                    })
+        
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Invalid action or series not found"}
+        )
     except Exception as e:
         return JSONResponse(
             status_code=500,

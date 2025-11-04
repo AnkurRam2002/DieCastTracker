@@ -60,6 +60,15 @@ class SeriesUpdateModel(BaseModel):
     subseries: str
     action: str  # 'add' or 'remove'
 
+class RenameSeriesModel(BaseModel):
+    old_name: str
+    new_name: str
+
+class RenameSubseriesModel(BaseModel):
+    main_series: str
+    old_name: str
+    new_name: str
+
 class SeriesMetadataModel(BaseModel):
     main_series: str
     description: str = None
@@ -559,6 +568,11 @@ async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
                     "message": f"Subseries '{update.subseries}' added to '{update.main_series}' successfully!",
                     "note": "Changes are temporary. Use CLI to persist changes to file."
                 })
+            else:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": f"Subseries '{update.subseries}' already exists in '{update.main_series}'"}
+                )
         elif update.action == 'remove':
             if update.main_series in SERIES_OPTIONS:
                 if update.subseries in SERIES_OPTIONS[update.main_series]:
@@ -573,6 +587,82 @@ async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
             status_code=400,
             content={"success": False, "error": "Invalid action or series not found"}
         )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/series/rename")
+async def rename_series(rename: RenameSeriesModel) -> JSONResponse:
+    """Rename a main series"""
+    try:
+        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        
+        if rename.old_name not in SERIES_OPTIONS:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": f"Series '{rename.old_name}' not found"}
+            )
+        
+        if rename.new_name in SERIES_OPTIONS:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": f"Series '{rename.new_name}' already exists"}
+            )
+        
+        # Rename the series
+        subseries_list = SERIES_OPTIONS.pop(rename.old_name)
+        SERIES_OPTIONS[rename.new_name] = subseries_list
+        
+        # Rename metadata if it exists
+        if rename.old_name in SERIES_METADATA:
+            SERIES_METADATA[rename.new_name] = SERIES_METADATA.pop(rename.old_name)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Series '{rename.old_name}' renamed to '{rename.new_name}' successfully!",
+            "note": "Changes are temporary. Use CLI to persist changes to file."
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/series/rename-subseries")
+async def rename_subseries(rename: RenameSubseriesModel) -> JSONResponse:
+    """Rename a subseries"""
+    try:
+        from scripts.series_config import SERIES_OPTIONS
+        
+        if rename.main_series not in SERIES_OPTIONS:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": f"Series '{rename.main_series}' not found"}
+            )
+        
+        if rename.old_name not in SERIES_OPTIONS[rename.main_series]:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "error": f"Subseries '{rename.old_name}' not found in '{rename.main_series}'"}
+            )
+        
+        if rename.new_name in SERIES_OPTIONS[rename.main_series]:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": f"Subseries '{rename.new_name}' already exists in '{rename.main_series}'"}
+            )
+        
+        # Rename the subseries
+        index = SERIES_OPTIONS[rename.main_series].index(rename.old_name)
+        SERIES_OPTIONS[rename.main_series][index] = rename.new_name
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Subseries '{rename.old_name}' renamed to '{rename.new_name}' successfully!",
+            "note": "Changes are temporary. Use CLI to persist changes to file."
+        })
     except Exception as e:
         return JSONResponse(
             status_code=500,

@@ -403,6 +403,22 @@
                 </div>
             </div>
 
+            <!-- Action Buttons -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
+                <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-tools text-purple-600"></i> Quick Actions</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="showAddSubseriesModal()" class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+                        <i class="fas fa-plus"></i> Add Subseries
+                    </button>
+                    <button onclick="showRenameSeriesModal()" class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+                        <i class="fas fa-edit"></i> Rename Series
+                    </button>
+                    <button onclick="showRenameSubseriesModal()" class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+                        <i class="fas fa-edit"></i> Rename Subseries
+                    </button>
+                </div>
+            </div>
+
             <!-- CLI Instructions -->
             <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
                 <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-terminal text-purple-600"></i> How to Manage Series</h4>
@@ -441,6 +457,111 @@
             </div>
         </div>
     </main>
+
+    <!-- Add Subseries Modal -->
+    <div id="add-subseries-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h2 class="text-xl font-bold">Add Subseries</h2>
+                <button onclick="closeModal('add-subseries-modal')" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="add-subseries-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Main Series</label>
+                    <select id="add-subseries-main-series" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500" required>
+                        <option value="">Select a series...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Subseries Name</label>
+                    <input type="text" id="add-subseries-name" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500" placeholder="Enter subseries name" required />
+                </div>
+                <div id="add-subseries-message" class="hidden"></div>
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all">
+                        <i class="fas fa-plus mr-2"></i> Add Subseries
+                    </button>
+                    <button type="button" onclick="closeModal('add-subseries-modal')" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all border-2 border-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rename Series Modal -->
+    <div id="rename-series-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h2 class="text-xl font-bold">Rename Series</h2>
+                <button onclick="closeModal('rename-series-modal')" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="rename-series-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Series</label>
+                    <select id="rename-series-old" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" required>
+                        <option value="">Select a series...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">New Name</label>
+                    <input type="text" id="rename-series-new" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter new series name" required />
+                </div>
+                <div id="rename-series-message" class="hidden"></div>
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">
+                        <i class="fas fa-save mr-2"></i> Rename
+                    </button>
+                    <button type="button" onclick="closeModal('rename-series-modal')" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all border-2 border-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rename Subseries Modal -->
+    <div id="rename-subseries-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                <h2 class="text-xl font-bold">Rename Subseries</h2>
+                <button onclick="closeModal('rename-subseries-modal')" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="rename-subseries-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Main Series</label>
+                    <select id="rename-subseries-main-series" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500" required>
+                        <option value="">Select a series...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Subseries</label>
+                    <select id="rename-subseries-old" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500" required>
+                        <option value="">Select a subseries...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">New Name</label>
+                    <input type="text" id="rename-subseries-new" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500" placeholder="Enter new subseries name" required />
+                </div>
+                <div id="rename-subseries-message" class="hidden"></div>
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition-all">
+                        <i class="fas fa-save mr-2"></i> Rename
+                    </button>
+                    <button type="button" onclick="closeModal('rename-subseries-modal')" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all border-2 border-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800/80 backdrop-blur-sm text-gray-300 text-center py-6 mt-8">
@@ -482,7 +603,231 @@
             container.innerHTML = `<div class="text-center text-white"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
         }
 
+        function updateStatistics(seriesOptions) {
+            const mainSeriesCount = Object.keys(seriesOptions).length;
+            const totalSubseries = Object.values(seriesOptions).reduce((sum, list) => sum + list.length, 0);
+            const averageSubseries = mainSeriesCount > 0 ? (totalSubseries / mainSeriesCount).toFixed(1) : 0;
+
+            document.getElementById('mainSeriesCount').textContent = mainSeriesCount;
+            document.getElementById('subseriesCount').textContent = totalSubseries;
+            document.getElementById('averageSubseries').textContent = averageSubseries;
+        }
+
+        let currentSeriesOptions = {};
+
+        // Modal functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function showAddSubseriesModal(preselectedSeries = null) {
+            const select = document.getElementById('add-subseries-main-series');
+            select.innerHTML = '<option value="">Select a series...</option>';
+            
+            Object.keys(currentSeriesOptions).forEach(series => {
+                const option = document.createElement('option');
+                option.value = series;
+                option.textContent = series;
+                if (preselectedSeries && series === preselectedSeries) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            document.getElementById('add-subseries-name').value = '';
+            document.getElementById('add-subseries-message').classList.add('hidden');
+            showModal('add-subseries-modal');
+        }
+
+        function showRenameSeriesModal(preselectedSeries = null) {
+            const select = document.getElementById('rename-series-old');
+            select.innerHTML = '<option value="">Select a series...</option>';
+            
+            Object.keys(currentSeriesOptions).forEach(series => {
+                const option = document.createElement('option');
+                option.value = series;
+                option.textContent = series;
+                if (preselectedSeries && series === preselectedSeries) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            document.getElementById('rename-series-new').value = '';
+            document.getElementById('rename-series-message').classList.add('hidden');
+            showModal('rename-series-modal');
+        }
+
+        function showRenameSubseriesModal(preselectedSeries = null, preselectedSubseries = null) {
+            const mainSeriesSelect = document.getElementById('rename-subseries-main-series');
+            const subseriesSelect = document.getElementById('rename-subseries-old');
+            
+            mainSeriesSelect.innerHTML = '<option value="">Select a series...</option>';
+            subseriesSelect.innerHTML = '<option value="">Select a subseries...</option>';
+            
+            Object.keys(currentSeriesOptions).forEach(series => {
+                const option = document.createElement('option');
+                option.value = series;
+                option.textContent = series;
+                if (preselectedSeries && series === preselectedSeries) {
+                    option.selected = true;
+                }
+                mainSeriesSelect.appendChild(option);
+            });
+            
+            // Update subseries when main series changes
+            mainSeriesSelect.addEventListener('change', function() {
+                const selectedSeries = this.value;
+                subseriesSelect.innerHTML = '<option value="">Select a subseries...</option>';
+                
+                if (selectedSeries && currentSeriesOptions[selectedSeries]) {
+                    currentSeriesOptions[selectedSeries].forEach(subseries => {
+                        const option = document.createElement('option');
+                        option.value = subseries;
+                        option.textContent = subseries;
+                        if (preselectedSubseries && subseries === preselectedSubseries) {
+                            option.selected = true;
+                        }
+                        subseriesSelect.appendChild(option);
+                    });
+                }
+            });
+            
+            // Trigger change if preselected
+            if (preselectedSeries) {
+                mainSeriesSelect.dispatchEvent(new Event('change'));
+            }
+            
+            document.getElementById('rename-subseries-new').value = '';
+            document.getElementById('rename-subseries-message').classList.add('hidden');
+            showModal('rename-subseries-modal');
+        }
+
+        function showMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'bg-red-50 text-red-700 p-4 rounded-lg border border-red-200' : 'bg-green-50 text-green-700 p-4 rounded-lg border border-green-200';
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        // Form handlers
+        document.getElementById('add-subseries-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mainSeries = document.getElementById('add-subseries-main-series').value;
+            const subseriesName = document.getElementById('add-subseries-name').value.trim();
+            
+            if (!mainSeries || !subseriesName) {
+                showMessage('add-subseries-message', 'Please fill in all fields', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/series/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        main_series: mainSeries,
+                        subseries: subseriesName,
+                        action: 'add'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('add-subseries-message', result.message);
+                    setTimeout(() => {
+                        closeModal('add-subseries-modal');
+                        loadSeriesConfiguration();
+                    }, 1500);
+                } else {
+                    showMessage('add-subseries-message', result.error || 'Failed to add subseries', true);
+                }
+            } catch (error) {
+                showMessage('add-subseries-message', 'Error: ' + error.message, true);
+            }
+        });
+
+        document.getElementById('rename-series-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldName = document.getElementById('rename-series-old').value;
+            const newName = document.getElementById('rename-series-new').value.trim();
+            
+            if (!oldName || !newName) {
+                showMessage('rename-series-message', 'Please fill in all fields', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/series/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        old_name: oldName,
+                        new_name: newName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('rename-series-message', result.message);
+                    setTimeout(() => {
+                        closeModal('rename-series-modal');
+                        loadSeriesConfiguration();
+                    }, 1500);
+                } else {
+                    showMessage('rename-series-message', result.error || 'Failed to rename series', true);
+                }
+            } catch (error) {
+                showMessage('rename-series-message', 'Error: ' + error.message, true);
+            }
+        });
+
+        document.getElementById('rename-subseries-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mainSeries = document.getElementById('rename-subseries-main-series').value;
+            const oldName = document.getElementById('rename-subseries-old').value;
+            const newName = document.getElementById('rename-subseries-new').value.trim();
+            
+            if (!mainSeries || !oldName || !newName) {
+                showMessage('rename-subseries-message', 'Please fill in all fields', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/series/rename-subseries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        main_series: mainSeries,
+                        old_name: oldName,
+                        new_name: newName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('rename-subseries-message', result.message);
+                    setTimeout(() => {
+                        closeModal('rename-subseries-modal');
+                        loadSeriesConfiguration();
+                    }, 1500);
+                } else {
+                    showMessage('rename-subseries-message', result.error || 'Failed to rename subseries', true);
+                }
+            } catch (error) {
+                showMessage('rename-subseries-message', 'Error: ' + error.message, true);
+            }
+        });
+
         function displaySeriesConfiguration(seriesOptions, seriesMetadata) {
+            currentSeriesOptions = seriesOptions;
             const container = document.getElementById('seriesConfiguration');
             let html = '';
 
@@ -491,10 +836,20 @@
                 
                 html += `
                     <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl border-l-4 border-purple-600 border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                        <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-tag text-purple-600"></i> ${mainSeries}
-                            <span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-3 py-1 text-sm font-semibold ml-2">${subseriesList.length} subseries</span>
-                        </h4>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-tag text-purple-600"></i> ${mainSeries}
+                                <span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-3 py-1 text-sm font-semibold ml-2">${subseriesList.length} subseries</span>
+                            </h4>
+                            <div class="flex gap-2">
+                                <button onclick="showRenameSeriesModal('${mainSeries}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors" title="Rename Series">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="showAddSubseriesModal('${mainSeries}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors" title="Add Subseries">
+                                    <i class="fas fa-plus"></i> Add Subseries
+                                </button>
+                            </div>
+                        </div>
                         
                         ${metadata.description ? `
                             <div class="bg-blue-50 rounded-xl p-4 mb-3 border-l-3 border-blue-500">
@@ -523,9 +878,14 @@
                 
                 subseriesList.forEach(subseries => {
                     html += `
-                        <div class="bg-gray-50 rounded-xl p-4 border-l-3 border-green-500 transition-all hover:bg-gray-100 hover:translate-x-1 flex items-center gap-2">
-                            <i class="fas fa-car text-green-600"></i>
-                            <span class="text-gray-700">${subseries}</span>
+                        <div class="bg-gray-50 rounded-xl p-4 border-l-3 border-green-500 transition-all hover:bg-gray-100 hover:translate-x-1 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 flex-1">
+                                <i class="fas fa-car text-green-600"></i>
+                                <span class="text-gray-700">${subseries}</span>
+                            </div>
+                            <button onclick="showRenameSubseriesModal('${mainSeries}', '${subseries}')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors" title="Rename Subseries">
+                                <i class="fas fa-edit"></i>
+                            </button>
                         </div>
                     `;
                 });
@@ -537,16 +897,6 @@
             });
 
             container.innerHTML = html;
-        }
-
-        function updateStatistics(seriesOptions) {
-            const mainSeriesCount = Object.keys(seriesOptions).length;
-            const totalSubseries = Object.values(seriesOptions).reduce((sum, list) => sum + list.length, 0);
-            const averageSubseries = mainSeriesCount > 0 ? (totalSubseries / mainSeriesCount).toFixed(1) : 0;
-
-            document.getElementById('mainSeriesCount').textContent = mainSeriesCount;
-            document.getElementById('subseriesCount').textContent = totalSubseries;
-            document.getElementById('averageSubseries').textContent = averageSubseries;
         }
 
         // Navbar scroll effect and load series configuration on page load

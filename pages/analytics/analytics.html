@@ -130,6 +130,19 @@
             max-height: 300px;
         }
         
+        /* Ensure chart containers don't overflow */
+        #seriesChartContainer,
+        #progressChartContainer {
+            overflow: hidden;
+        }
+        
+        #seriesChartContainer canvas,
+        #progressChartContainer canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
         .chart-container h4 {
             color: #2c3e50;
             font-weight: 600;
@@ -346,19 +359,23 @@
 
             <!-- Charts Row -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-purple-600"></i> Series Distribution</h4>
-                    <div class="flex-1 flex items-center justify-center" id="seriesChartLoading">
+                <div class="lg:col-span-2 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96 overflow-hidden">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 flex-shrink-0"><i class="fas fa-chart-bar text-purple-600"></i> Series Distribution</h4>
+                    <div class="flex-1 flex items-center justify-center min-h-0" id="seriesChartLoading">
                         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
-                    <canvas id="seriesChart" class="flex-1" style="display: none;"></canvas>
+                    <div class="flex-1 min-h-0 relative" style="display: none;" id="seriesChartContainer">
+                        <canvas id="seriesChart" class="w-full h-full"></canvas>
+                    </div>
                 </div>
-                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-pie text-purple-600"></i> Collection Progress</h4>
-                    <div class="flex-1 flex items-center justify-center" id="progressChartLoading">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96 overflow-hidden">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 flex-shrink-0"><i class="fas fa-chart-pie text-purple-600"></i> Collection Progress</h4>
+                    <div class="flex-1 flex items-center justify-center min-h-0" id="progressChartLoading">
                         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
-                    <canvas id="progressChart" class="flex-1" style="display: none;"></canvas>
+                    <div class="flex-1 min-h-0 relative" style="display: none;" id="progressChartContainer">
+                        <canvas id="progressChart" class="w-full h-full"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -477,7 +494,6 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    aspectRatio: 2,
                     plugins: {
                         legend: {
                             display: false
@@ -518,13 +534,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    aspectRatio: 1,
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                padding: 20,
-                                usePointStyle: true
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
                             }
                         }
                     }
@@ -534,8 +552,8 @@
             // Hide loading spinners and show charts
             document.getElementById('seriesChartLoading').style.display = 'none';
             document.getElementById('progressChartLoading').style.display = 'none';
-            document.getElementById('seriesChart').style.display = 'block';
-            document.getElementById('progressChart').style.display = 'block';
+            document.getElementById('seriesChartContainer').style.display = 'flex';
+            document.getElementById('progressChartContainer').style.display = 'flex';
         }
 
         function updateRecentAdditions(recent) {

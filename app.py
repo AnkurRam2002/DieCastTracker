@@ -523,6 +523,7 @@ async def get_analytics() -> JSONResponse:
                 "analytics": {
                     "total_models": 0,
                     "series_breakdown": {},
+                    "main_series_breakdown": {},
                     "recent_additions": [],
                     "collection_goals": {},
                     "model_insights": {}
@@ -532,12 +533,23 @@ async def get_analytics() -> JSONResponse:
         # Basic statistics
         total_models = len(df)
         
-        # Series breakdown
+        # Series breakdown (by subseries)
         series_column = 'Series' if 'Series' in df.columns else df.columns[2] if len(df.columns) > 2 else None
         series_breakdown = {}
+        main_series_breakdown = {}
         if series_column:
             series_counts = df[series_column].value_counts()
             series_breakdown = series_counts.to_dict()
+            
+            # Group by main series categories
+            from scripts.series_config import find_main_series_for_subseries
+            for subseries, count in series_counts.items():
+                main_series = find_main_series_for_subseries(subseries) if subseries else None
+                if main_series:
+                    main_series_breakdown[main_series] = main_series_breakdown.get(main_series, 0) + count
+                else:
+                    # If subseries doesn't match any main series, use "Others"
+                    main_series_breakdown["Others"] = main_series_breakdown.get("Others", 0) + count
         
         # Recent additions (last 10) - reversed so newest shows first
         recent_additions = df.tail(10).to_dict('records')
@@ -577,6 +589,7 @@ async def get_analytics() -> JSONResponse:
             "analytics": {
                 "total_models": total_models,
                 "series_breakdown": series_breakdown,
+                "main_series_breakdown": main_series_breakdown,
                 "recent_additions": recent_additions,
                 "collection_goals": collection_goals,
                 "model_insights": model_insights

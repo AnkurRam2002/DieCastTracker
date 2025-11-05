@@ -472,11 +472,36 @@
         }
 
         function updateCharts(analytics) {
-            // Series Distribution Chart
+            // Series Distribution Chart - Use main series breakdown for better visualization
             const seriesCtx = document.getElementById('seriesChart').getContext('2d');
             if (seriesChart) seriesChart.destroy();
             
-            const seriesData = Object.entries(analytics.series_breakdown);
+            // Use main_series_breakdown if available, otherwise fall back to series_breakdown
+            const breakdownData = analytics.main_series_breakdown || analytics.series_breakdown || {};
+            let seriesData = Object.entries(breakdownData);
+            
+            // Sort by value (ascending) so smaller series are more visible
+            seriesData.sort((a, b) => a[1] - b[1]);
+            
+            // Color palette for different series
+            const colorPalette = [
+                'rgba(102, 126, 234, 0.8)',   // Purple - Mainlines
+                'rgba(240, 147, 251, 0.8)',   // Pink - Silver Series
+                'rgba(79, 172, 254, 0.8)',    // Blue - Premiums
+                'rgba(67, 233, 123, 0.8)',    // Green - Others
+                'rgba(255, 193, 7, 0.8)',     // Yellow - Fallback
+                'rgba(255, 87, 34, 0.8)',     // Orange - Fallback
+            ];
+            
+            const borderPalette = [
+                'rgba(102, 126, 234, 1)',
+                'rgba(240, 147, 251, 1)',
+                'rgba(79, 172, 254, 1)',
+                'rgba(67, 233, 123, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(255, 87, 34, 1)',
+            ];
+            
             seriesChart = new Chart(seriesCtx, {
                 type: 'bar',
                 data: {
@@ -484,29 +509,40 @@
                     datasets: [{
                         label: 'Number of Models',
                         data: seriesData.map(item => item[1]),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: seriesData.map((_, index) => colorPalette[index % colorPalette.length]),
+                        borderColor: seriesData.map((_, index) => borderPalette[index % borderPalette.length]),
                         borderWidth: 2,
                         borderRadius: 8,
                         borderSkipped: false,
                     }]
                 },
                 options: {
+                    indexAxis: 'y', // Horizontal bars for better readability
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Models: ${context.parsed.x}`;
+                                }
+                            }
                         }
                     },
                     scales: {
-                        y: {
+                        x: {
                             beginAtZero: true,
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                precision: 0
                             }
                         },
-                        x: {
+                        y: {
                             grid: {
                                 display: false
                             }

@@ -526,7 +526,7 @@ async def get_analytics() -> JSONResponse:
                     "main_series_breakdown": {},
                     "recent_additions": [],
                     "collection_goals": {},
-                    "model_insights": {}
+                    "collection_insights": {}
                 }
             })
         
@@ -552,8 +552,19 @@ async def get_analytics() -> JSONResponse:
                     main_series_breakdown["Others"] = main_series_breakdown.get("Others", 0) + count
         
         # Recent additions (last 10) - reversed so newest shows first
+        # Enhance with main series information
+        from scripts.series_config import find_main_series_for_subseries
         recent_additions = df.tail(10).to_dict('records')
         recent_additions.reverse()  # Reverse to show newest first
+        
+        # Add main series information to each recent addition
+        for item in recent_additions:
+            subseries = item.get('Series', '')
+            if subseries:
+                main_series = find_main_series_for_subseries(subseries)
+                item['Main Series'] = main_series if main_series else 'Others'
+            else:
+                item['Main Series'] = 'Others'
         
         # Collection goals
         milestones = [10, 25, 50, 100, 250, 500, 1000]
@@ -569,20 +580,55 @@ async def get_analytics() -> JSONResponse:
             "progress_percentage": (total_models / next_milestone * 100) if next_milestone else 100
         }
         
-        # Model insights
+        # Collection insights - more useful and intuitive
+        collection_insights = {}
+        
+        # Top series (most collected)
+        if main_series_breakdown:
+            top_series = sorted(main_series_breakdown.items(), key=lambda x: x[1], reverse=True)
+            collection_insights["top_series"] = dict(top_series[:3])  # Top 3
+        
+        # Collection diversity (how spread out the collection is)
+        if main_series_breakdown and len(main_series_breakdown) > 0:
+            # Calculate diversity as percentage: how evenly distributed the collection is
+            max_count = max(main_series_breakdown.values())
+            min_count = min(main_series_breakdown.values())
+            if max_count > 0:
+                diversity = (1 - (max_count - min_count) / max_count) * 100 if max_count > min_count else 100
+                collection_insights["diversity_score"] = round(diversity, 1)
+            else:
+                collection_insights["diversity_score"] = 0
+        
+        # Most popular subseries (top 5)
+        if series_breakdown:
+            top_subseries = sorted(series_breakdown.items(), key=lambda x: x[1], reverse=True)
+            collection_insights["top_subseries"] = dict(top_subseries[:5])
+        
+        # Series coverage (how many main series categories are represented)
+        if main_series_breakdown:
+            from scripts.series_config import get_all_series
+            all_main_series = get_all_series()
+            covered_series = len(main_series_breakdown)
+            total_possible_series = len(all_main_series)
+            collection_insights["series_coverage"] = {
+                "covered": covered_series,
+                "total": total_possible_series,
+                "percentage": round((covered_series / total_possible_series * 100) if total_possible_series > 0 else 0, 1)
+            }
+        
+        # Model name insights (common words only, no average length)
         model_column = 'Model Name' if 'Model Name' in df.columns else df.columns[1] if len(df.columns) > 1 else None
-        model_insights = {}
         if model_column:
             model_names = df[model_column].dropna().astype(str)
-            # Find common words
+            # Filter out common stop words and very short words
+            stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'series'}
             all_words = []
             for name in model_names:
-                all_words.extend(name.lower().split())
+                words = [w.lower().strip('.,!?()[]{}') for w in name.split() if len(w) > 2 and w.lower() not in stop_words]
+                all_words.extend(words)
             word_counts = Counter(all_words)
-            model_insights = {
-                "common_words": dict(word_counts.most_common(10)),
-                "average_name_length": model_names.str.len().mean()
-            }
+            # Get top meaningful words
+            collection_insights["common_words"] = dict(word_counts.most_common(8))
         
         return JSONResponse(content={
             "success": True,
@@ -592,7 +638,7 @@ async def get_analytics() -> JSONResponse:
                 "main_series_breakdown": main_series_breakdown,
                 "recent_additions": recent_additions,
                 "collection_goals": collection_goals,
-                "model_insights": model_insights
+                "collection_insights": collection_insights
             }
         })
         

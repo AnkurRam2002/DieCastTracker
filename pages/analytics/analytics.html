@@ -391,9 +391,9 @@
 
             <!-- Recent Additions & Insights -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-clock text-purple-600"></i> Recent Additions</h4>
-                    <div class="max-h-72 overflow-y-auto pr-2">
+                <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 flex flex-col h-96">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 flex-shrink-0"><i class="fas fa-clock text-purple-600"></i> Recent Additions</h4>
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-2">
                         <div id="recentAdditions">
                             <div class="flex items-center justify-center h-32">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -441,7 +441,7 @@
                     updateStats(data.analytics);
                     updateCharts(data.analytics);
                     updateRecentAdditions(data.analytics.recent_additions);
-                    updateModelInsights(data.analytics.model_insights);
+                    updateCollectionInsights(data.analytics.collection_insights);
                     updateMilestoneProgress(data.analytics.collection_goals);
                 } else {
                     console.error('Failed to load analytics:', data.error);
@@ -599,35 +599,106 @@
                 return;
             }
 
-            container.innerHTML = recent.map(item => `
-                <div class="bg-gray-50 rounded-xl p-4 mb-3 border-l-4 border-purple-600 transition-all hover:bg-gray-100 hover:translate-x-1">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <strong class="text-gray-800">${item['Model Name'] || item['S.No']}</strong><br>
-                            <small class="text-gray-500">${item['Series'] || 'No series'}</small>
+            container.innerHTML = recent.map(item => {
+                const modelName = item['Model Name'] || item['Model name'] || item['S.No'] || 'Unknown';
+                const subseries = item['Series'] || '';
+                const mainSeries = item['Main Series'] || '';
+                
+                // Show subseries if it's more descriptive than just the main series name
+                // Otherwise show main series
+                let seriesDisplay = '';
+                if (subseries && subseries !== 'Mainlines' && subseries !== mainSeries) {
+                    // Show the specific subseries (e.g., "57th Anniversary Series", "Ultra Hots")
+                    seriesDisplay = subseries;
+                } else if (mainSeries) {
+                    // Fall back to main series (e.g., "Mainlines", "Silver Series")
+                    seriesDisplay = mainSeries;
+                } else if (subseries) {
+                    seriesDisplay = subseries;
+                } else {
+                    seriesDisplay = 'No series';
+                }
+                
+                // Color coding based on main series for visual distinction
+                const getBorderColor = (mainSeries) => {
+                    if (!mainSeries) return 'border-purple-600';
+                    const colors = {
+                        'Mainlines': 'border-purple-600',
+                        'Silver Series': 'border-pink-500',
+                        'Premiums': 'border-blue-500',
+                        'Others': 'border-green-500'
+                    };
+                    return colors[mainSeries] || 'border-purple-600';
+                };
+                
+                return `
+                    <div class="bg-gray-50 rounded-xl p-4 mb-3 border-l-4 ${getBorderColor(mainSeries)} transition-all hover:bg-gray-100 hover:translate-x-1">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0">
+                                <strong class="text-gray-800 block truncate">${modelName}</strong>
+                                <small class="text-gray-500 text-xs">${seriesDisplay}</small>
+                            </div>
+                            <i class="fas fa-car text-purple-600 ml-2 flex-shrink-0"></i>
                         </div>
-                        <i class="fas fa-car text-purple-600"></i>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        function updateModelInsights(insights) {
+        function updateCollectionInsights(insights) {
             const container = document.getElementById('modelInsights');
+            if (!insights || Object.keys(insights).length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500"><i class="fas fa-info-circle"></i> No insights available</div>';
+                return;
+            }
+
             let html = '';
 
-            if (insights.common_words && Object.keys(insights.common_words).length > 0) {
-                html += '<h6 class="mb-3 text-sm font-semibold text-gray-700"><i class="fas fa-tags text-purple-600"></i> Most Common Words:</h6>';
-                html += '<div class="mb-4 flex flex-wrap gap-2">';
-                Object.entries(insights.common_words).slice(0, 5).forEach(([word, count]) => {
-                    html += `<span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-4 py-2 text-sm font-medium">${word} (${count})</span>`;
-                });
+            // Series Coverage
+            if (insights.series_coverage) {
+                const coverage = insights.series_coverage;
+                html += '<div class="mb-4">';
+                html += '<h6 class="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="fas fa-chart-pie text-purple-600"></i> Series Coverage:</h6>';
+                html += `<div class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-lg px-4 py-3 text-center">
+                    <div class="text-2xl font-bold">${coverage.covered}/${coverage.total}</div>
+                    <div class="text-xs opacity-90">${coverage.percentage}% of categories</div>
+                </div>`;
                 html += '</div>';
             }
 
-            if (insights.average_name_length) {
-                html += `<h6 class="mb-3 text-sm font-semibold text-gray-700"><i class="fas fa-ruler text-purple-600"></i> Average Name Length:</h6>`;
-                html += `<div class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-4 py-2 text-sm font-medium inline-block">${insights.average_name_length.toFixed(1)} characters</div>`;
+            // Diversity Score
+            if (insights.diversity_score !== undefined) {
+                html += '<div class="mb-4">';
+                html += '<h6 class="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="fas fa-balance-scale text-purple-600"></i> Collection Diversity:</h6>';
+                const diversity = insights.diversity_score;
+                const diversityColor = diversity >= 70 ? 'from-green-500 to-green-600' : diversity >= 40 ? 'from-yellow-500 to-yellow-600' : 'from-red-500 to-red-600';
+                html += `<div class="bg-gradient-to-r ${diversityColor} text-white rounded-lg px-4 py-3 text-center">
+                    <div class="text-2xl font-bold">${diversity}%</div>
+                    <div class="text-xs opacity-90">${diversity >= 70 ? 'Well distributed' : diversity >= 40 ? 'Moderately diverse' : 'Focused collection'}</div>
+                </div>`;
+                html += '</div>';
+            }
+
+            // Top Subseries
+            if (insights.top_subseries && Object.keys(insights.top_subseries).length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h6 class="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="fas fa-star text-purple-600"></i> Top Subseries:</h6>';
+                html += '<div class="flex flex-wrap gap-2">';
+                Object.entries(insights.top_subseries).slice(0, 5).forEach(([subseries, count]) => {
+                    html += `<span class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-full px-3 py-1 text-xs font-medium">${subseries} <span class="opacity-90">(${count})</span></span>`;
+                });
+                html += '</div></div>';
+            }
+
+            // Common Words (if available)
+            if (insights.common_words && Object.keys(insights.common_words).length > 0) {
+                html += '<div>';
+                html += '<h6 class="mb-2 text-sm font-semibold text-gray-700 flex items-center gap-2"><i class="fas fa-tags text-purple-600"></i> Popular Keywords:</h6>';
+                html += '<div class="flex flex-wrap gap-2">';
+                Object.entries(insights.common_words).slice(0, 6).forEach(([word, count]) => {
+                    html += `<span class="bg-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">${word} <span class="text-gray-500">(${count})</span></span>`;
+                });
+                html += '</div></div>';
             }
 
             container.innerHTML = html || '<div class="text-center text-gray-500"><i class="fas fa-info-circle"></i> No insights available</div>';

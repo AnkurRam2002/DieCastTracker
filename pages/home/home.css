@@ -1,3 +1,30 @@
 /* Home page specific styles */
 /* Additional styles can be added here if needed */
 
+/* Force visible and editable inputs in edit modal */
+#edit-modal input[type="text"],
+#edit-modal .edit-modal-input {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border: 2px solid #d1d5db !important;
+  min-height: 2.5rem !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  cursor: text !important;
+  padding: 0.625rem 1rem !important;
+  width: 100% !important;
+}
+
+/* Ensure modal container has proper z-index and overflow */
+#edit-modal {
+  z-index: 9999 !important;
+}
+
+#edit-modal > div {
+  z-index: 10000 !important;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+

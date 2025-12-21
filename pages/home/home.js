@@ -278,26 +278,128 @@ class DieCastTracker {
         // Clear previous fields
         formFields.innerHTML = '';
         
+        // Get all columns - combine columns array with row keys to ensure we get ALL fields
+        const allColumns = new Set([...this.columns, ...Object.keys(row)]);
+        const columnsToShow = Array.from(allColumns).filter(col => col && col.trim() !== '');
+        
+        console.log('Available columns:', columnsToShow);
+        console.log('Row data keys:', Object.keys(row));
+        console.log('Columns array:', this.columns);
+        
         // Generate form fields for all columns except S.No
-        this.columns.forEach(column => {
-            if (column === 'S.No') return; // Skip serial number
+        columnsToShow.forEach(column => {
+            // Skip serial number and any empty column names
+            if (column === 'S.No' || !column || column.trim() === '') return;
             
-            const value = row[column] || '';
+            // Get value from row, handling different possible key formats
+            let value = row[column];
+            if (value === null || value === undefined || value === '') {
+                value = '';
+            } else {
+                value = String(value);
+            }
+            
+            // Create safe ID from column name (no spaces, only letters/numbers/_/-)
+            const safeId = 'edit-' + column.replace(/\s+/g, '_').replace(/[^\w\-]/g, '');
+            
+            console.log(`Creating field for "${column}": value = "${value}" (safeId: "${safeId}")`);
+            
+            // Create container div
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `
-                <label for="edit-${column}" class="block text-sm font-medium text-gray-700 mb-1">
-                    ${column}
-                </label>
-                <input 
-                    type="text" 
-                    id="edit-${column}" 
-                    name="${column}" 
-                    value="${this.escapeHtml(String(value))}"
-                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
-                />
-            `;
-            formFields.appendChild(fieldDiv.firstElementChild);
+            fieldDiv.className = 'mb-4';
+            
+            // Create label element
+            const label = document.createElement('label');
+            label.setAttribute('for', safeId);
+            label.className = 'block text-sm font-medium text-gray-700 mb-2';
+            label.textContent = column;
+            
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = safeId;
+            input.name = column; // Keep original column name for FormData
+            
+            // Set value explicitly and ensure it's displayed
+            input.value = value;
+            input.defaultValue = value;
+            
+            // Set all attributes to ensure input is visible and editable
+            input.className = 'edit-modal-input w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all bg-white text-gray-900 placeholder-gray-400';
+            // Force visible styles with !important equivalent inline styles
+            input.style.setProperty('background-color', '#ffffff', 'important');
+            input.style.setProperty('color', '#111827', 'important');
+            input.style.setProperty('border', '2px solid #d1d5db', 'important');
+            input.style.setProperty('padding', '0.625rem 1rem', 'important');
+            input.style.setProperty('min-height', '2.5rem', 'important');
+            input.style.setProperty('width', '100%', 'important');
+            input.style.setProperty('display', 'block', 'important');
+            input.style.setProperty('opacity', '1', 'important');
+            input.style.setProperty('visibility', 'visible', 'important');
+            input.style.setProperty('pointer-events', 'auto', 'important');
+            input.style.setProperty('cursor', 'text', 'important');
+            input.placeholder = `Enter ${column}`;
+            input.readOnly = false;
+            input.disabled = false;
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('tabindex', '0');
+            
+            // Ensure input is editable and visible
+            input.addEventListener('focus', function() {
+                this.style.borderColor = '#f97316'; // orange-500
+                this.style.outline = 'none';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.style.borderColor = '#d1d5db'; // gray-300
+            });
+            
+            input.addEventListener('input', function() {
+                console.log(`Input "${column}" changed to:`, this.value);
+            });
+            
+            // Append label and input to fieldDiv
+            fieldDiv.appendChild(label);
+            fieldDiv.appendChild(input);
+            
+            // Verify the input was created correctly
+            console.log(`Input created for "${column}":`, {
+                id: input.id,
+                name: input.name,
+                value: input.value,
+                defaultValue: input.defaultValue,
+                readOnly: input.readOnly,
+                disabled: input.disabled,
+                computedDisplay: window.getComputedStyle(input).display,
+                computedHeight: window.getComputedStyle(input).height
+            });
+            
+            // Append fieldDiv to formFields
+            formFields.appendChild(fieldDiv);
         });
+        
+        console.log('Form fields created:', formFields.children.length);
+        
+        // Verify inputs are created and editable
+        const allInputs = formFields.querySelectorAll('input[type="text"]');
+        console.log('Total input fields found:', allInputs.length);
+        allInputs.forEach((input, index) => {
+            console.log(`Input ${index + 1}:`, {
+                id: input.id,
+                name: input.name,
+                value: input.value,
+                readOnly: input.readOnly,
+                disabled: input.disabled,
+                className: input.className
+            });
+        });
+        
+        // Focus on first input when modal opens
+        if (allInputs.length > 0) {
+            setTimeout(() => {
+                allInputs[0].focus();
+            }, 100);
+        }
         
         modal.classList.remove('hidden');
     }
@@ -316,14 +418,17 @@ class DieCastTracker {
         const formData = new FormData(event.target);
         const updates = {};
         
-        // Collect all field updates
-        this.columns.forEach(column => {
-            if (column === 'S.No') return;
-            const input = document.getElementById(`edit-${column}`);
-            if (input && input.value !== String(this.currentEditingRow[column] || '')) {
-                updates[column] = input.value.trim();
+        // Use FormData to collect all inputs - this avoids fragile getElementById lookups
+        for (const [name, value] of formData.entries()) {
+            if (name === 'S.No' || !name || name.trim() === '') continue;
+            
+            const newValue = String(value || '').trim();
+            const oldValue = String(this.currentEditingRow[name] ?? '').trim();
+            
+            if (newValue !== oldValue) {
+                updates[name] = newValue;
             }
-        });
+        }
         
         if (Object.keys(updates).length === 0) {
             alert('No changes to save');

@@ -16,9 +16,9 @@ import uvicorn
 from openpyxl import load_workbook
 import sys
 import json
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
-from scripts.backup_utils import create_backup
-from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA, get_all_series, get_subseries, get_series_info
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+from utils.backup_utils import create_backup
+from series_config import SERIES_OPTIONS, SERIES_METADATA, get_all_series, get_subseries, get_series_info
 from collections import Counter
 from datetime import datetime
 
@@ -37,129 +37,9 @@ templates = Jinja2Templates(directory="pages")
 EXCEL_FILE_PATH = os.path.join("data", "HW_list.xlsx")
 
 # Path to the series config file
-SERIES_CONFIG_PATH = os.path.join("scripts", "series_config.py")
+SERIES_CONFIG_PATH = os.path.join("pages", "series-management", "series_config.py")
 
-def save_series_config():
-    """Save the current SERIES_OPTIONS and SERIES_METADATA to series_config.py file"""
-    try:
-        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
-        
-        # Create backup of the config file
-        if os.path.exists(SERIES_CONFIG_PATH):
-            backup_path = SERIES_CONFIG_PATH + ".backup"
-            import shutil
-            shutil.copy2(SERIES_CONFIG_PATH, backup_path)
-        
-        # Format the dictionaries for Python code
-        # Format SERIES_OPTIONS - maintain single line format like original
-        series_options_items = []
-        for series, subseries_list in SERIES_OPTIONS.items():
-            # Use repr() for proper string escaping
-            subseries_repr = [repr(sub) for sub in subseries_list]
-            series_options_items.append(f"{repr(series)}: [{', '.join(subseries_repr)}]")
-        series_options_str = "{" + ", ".join(series_options_items) + "}"
-        
-        # Format SERIES_METADATA - maintain single line format like original
-        series_metadata_items = []
-        for series, metadata in SERIES_METADATA.items():
-            desc = repr(metadata.get('description', 'No description available'))
-            price = repr(metadata.get('price_range', 'Varies'))
-            rarity = repr(metadata.get('rarity', 'Unknown'))
-            series_metadata_items.append(f"{repr(series)}: {{'description': {desc}, 'price_range': {price}, 'rarity': {rarity}}}")
-        series_metadata_str = "{" + ", ".join(series_metadata_items) + "}"
-        
-        # Generate the complete file content
-        config_content = f'''#!/usr/bin/env python3
-"""
-DieCastTracker - Series Configuration
-Centralized configuration for Hot Wheels series and subseries options
-"""
-
-# Series options as a nested dictionary
-SERIES_OPTIONS = {series_options_str}
-
-# Series metadata for additional information
-SERIES_METADATA = {series_metadata_str}
-
-def get_all_series():
-    """Get all main series categories"""
-    return list(SERIES_OPTIONS.keys())
-
-def get_subseries(main_series):
-    """Get subseries for a specific main series"""
-    return SERIES_OPTIONS.get(main_series, [])
-
-def get_all_subseries():
-    """Get all subseries as a flat list"""
-    all_subseries = []
-    for subseries_list in SERIES_OPTIONS.values():
-        all_subseries.extend(subseries_list)
-    return all_subseries
-
-def get_series_info(main_series):
-    """Get metadata information for a main series"""
-    return SERIES_METADATA.get(main_series, {{}})
-
-def find_main_series_for_subseries(subseries):
-    """Find which main series a subseries belongs to"""
-    for main_series, subseries_list in SERIES_OPTIONS.items():
-        if subseries in subseries_list:
-            return main_series
-    return None
-
-def validate_series_combination(main_series, subseries):
-    """Validate if a main series and subseries combination is valid"""
-    if main_series not in SERIES_OPTIONS:
-        return False
-    return subseries in SERIES_OPTIONS[main_series]
-
-def get_series_count():
-    """Get total count of series and subseries"""
-    main_count = len(SERIES_OPTIONS)
-    sub_count = sum(len(subseries_list) for subseries_list in SERIES_OPTIONS.values())
-    return main_count, sub_count
-
-def print_series_summary():
-    """Print a summary of all series options"""
-    print("📊 SERIES CONFIGURATION SUMMARY")
-    print("=" * 50)
-    
-    main_count, sub_count = get_series_count()
-    print(f"Main Series Categories: {{main_count}}")
-    print(f"Total Subseries: {{sub_count}}")
-    print()
-    
-    for main_series, subseries_list in SERIES_OPTIONS.items():
-        metadata = get_series_info(main_series)
-        print(f"🏷️  {{main_series}} ({{len(subseries_list)}} subseries)")
-        if metadata:
-            print(f"   Description: {{metadata.get('description', 'N/A')}}")
-            print(f"   Price Range: {{metadata.get('price_range', 'N/A')}}")
-            print(f"   Rarity: {{metadata.get('rarity', 'N/A')}}")
-        print(f"   Subseries: {{', '.join(subseries_list)}}")
-        print()
-
-if __name__ == "__main__":
-    # Test the configuration
-    print_series_summary()
-    
-    # Test some functions
-    print("🔍 TESTING FUNCTIONS:")
-    print(f"All main series: {{get_all_series()}}")
-    print(f"Mainlines subseries: {{get_subseries('Mainlines')}}")
-    print(f"Total series count: {{get_series_count()}}")
-    print(f"Find main series for 'Ultra Hots': {{find_main_series_for_subseries('Ultra Hots')}}")
-    print(f"Validate 'Mainlines' + 'Mainlines': {{validate_series_combination('Mainlines', 'Mainlines')}}")
-'''
-        
-        # Write to file
-        with open(SERIES_CONFIG_PATH, 'w', encoding='utf-8') as f:
-            f.write(config_content)
-        
-        return True
-    except Exception as e:
-        print(f"Error saving series config: {e}")
-        return False
+# save_series_config is now in pages/series-management/manage_series.py
 
 # Data model for adding new cars
 class NewCarModel(BaseModel):
@@ -328,33 +208,11 @@ async def get_dropdown_options() -> JSONResponse:
 async def add_new_model(model: NewCarModel) -> JSONResponse:
     """Add a new model to the Excel file"""
     try:
-        # Load existing workbook or create new one
-        if os.path.exists(EXCEL_FILE_PATH):
-            wb = load_workbook(EXCEL_FILE_PATH)
-            ws = wb.active
-            last_serial_number = ws.max_row
-        else:
-            from openpyxl import Workbook
-            wb = Workbook()
-            ws = wb.active
-            ws.append(["S.No", "Model Name", "Series"])
-            last_serial_number = 1
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'add-model'))
+        from add_model import add_model
         
-        # Add new row (using subseries as the series field in Excel)
-        ws.append([
-            last_serial_number,
-            model.model_name.strip(),
-            model.subseries
-        ])
-        
-        # Save workbook
-        wb.save(EXCEL_FILE_PATH)
-        
-        return JSONResponse(content={
-            "success": True,
-            "message": f"Successfully added '{model.model_name}' to the collection!",
-            "serial_number": last_serial_number
-        })
+        result = add_model(model.model_name, model.series, model.subseries)
+        return JSONResponse(content=result)
         
     except Exception as e:
         return JSONResponse(
@@ -366,20 +224,10 @@ async def add_new_model(model: NewCarModel) -> JSONResponse:
 async def search_data(q: str = "") -> JSONResponse:
     """Search through the data"""
     try:
-        df = load_excel_data()
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'home'))
+        from home import search_models
         
-        if not q:
-            # Return all data if no search query
-            data = df.to_dict('records')
-        else:
-            # Search across all text columns
-            mask = pd.Series([False] * len(df))
-            for col in df.select_dtypes(include=['object']).columns:
-                mask |= df[col].astype(str).str.contains(q, case=False, na=False)
-            
-            filtered_df = df[mask]
-            data = filtered_df.to_dict('records')
-        
+        data = search_models(q)
         return JSONResponse(content={
             "success": True,
             "data": data,
@@ -397,48 +245,10 @@ async def search_data(q: str = "") -> JSONResponse:
 async def update_model(model: UpdateCarModel) -> JSONResponse:
     """Update an existing model in the Excel file"""
     try:
-        # Create backup before update
-        if not create_backup(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to create backup"}
-            )
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'home'))
+        from home import update_model as update_model_func
         
-        # Load existing workbook
-        if not os.path.exists(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": "Excel file not found"}
-            )
-        
-        wb = load_workbook(EXCEL_FILE_PATH)
-        ws = wb.active
-        
-        # Find the row with the given serial number
-        target_row = None
-        for row_num in range(2, ws.max_row + 1):
-            if ws.cell(row=row_num, column=1).value == model.serial_number:
-                target_row = row_num
-                break
-        
-        if target_row is None:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": f"Model with serial number {model.serial_number} not found"}
-            )
-        
-        # Get headers from first row
-        headers = [cell.value for cell in ws[1]]
-        
-        # Update the fields that are provided
-        for field_name, new_value in model.updates.items():
-            if field_name in headers:
-                col_index = headers.index(field_name) + 1
-                ws.cell(row=target_row, column=col_index, value=str(new_value).strip() if new_value else "")
-        
-        # Save workbook
-        wb.save(EXCEL_FILE_PATH)
-        
+        update_model_func(model.serial_number, model.updates)
         return JSONResponse(content={
             "success": True,
             "message": f"Successfully updated model with serial number {model.serial_number}!"
@@ -454,46 +264,10 @@ async def update_model(model: UpdateCarModel) -> JSONResponse:
 async def delete_model(model: DeleteCarModel) -> JSONResponse:
     """Delete a model from the Excel file"""
     try:
-        # Create backup before deletion
-        if not create_backup(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to create backup"}
-            )
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'home'))
+        from home import delete_model as delete_model_func
         
-        # Load existing workbook
-        if not os.path.exists(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": "Excel file not found"}
-            )
-        
-        wb = load_workbook(EXCEL_FILE_PATH)
-        ws = wb.active
-        
-        # Find the row with the given serial number
-        target_row = None
-        for row_num in range(2, ws.max_row + 1):
-            if ws.cell(row=row_num, column=1).value == model.serial_number:
-                target_row = row_num
-                break
-        
-        if target_row is None:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": f"Model with serial number {model.serial_number} not found"}
-            )
-        
-        # Delete the row
-        ws.delete_rows(target_row)
-        
-        # Renumber serial numbers
-        for row_num in range(2, ws.max_row + 1):
-            ws.cell(row=row_num, column=1, value=row_num - 1)
-        
-        # Save workbook
-        wb.save(EXCEL_FILE_PATH)
-        
+        delete_model_func(model.serial_number)
         return JSONResponse(content={
             "success": True,
             "message": f"Successfully deleted model with serial number {model.serial_number}!"
@@ -515,131 +289,13 @@ async def analytics_page(request: Request):
 async def get_analytics() -> JSONResponse:
     """Get comprehensive analytics data"""
     try:
-        df = load_excel_data()
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'analytics'))
+        from analytics import get_collection_statistics
         
-        if df.empty:
-            return JSONResponse(content={
-                "success": True,
-                "analytics": {
-                    "total_models": 0,
-                    "series_breakdown": {},
-                    "main_series_breakdown": {},
-                    "recent_additions": [],
-                    "collection_goals": {},
-                    "collection_insights": {}
-                }
-            })
-        
-        # Basic statistics
-        total_models = len(df)
-        
-        # Series breakdown (by subseries)
-        series_column = 'Series' if 'Series' in df.columns else df.columns[2] if len(df.columns) > 2 else None
-        series_breakdown = {}
-        main_series_breakdown = {}
-        if series_column:
-            series_counts = df[series_column].value_counts()
-            series_breakdown = series_counts.to_dict()
-            
-            # Group by main series categories
-            from scripts.series_config import find_main_series_for_subseries
-            for subseries, count in series_counts.items():
-                main_series = find_main_series_for_subseries(subseries) if subseries else None
-                if main_series:
-                    main_series_breakdown[main_series] = main_series_breakdown.get(main_series, 0) + count
-                else:
-                    # If subseries doesn't match any main series, use "Others"
-                    main_series_breakdown["Others"] = main_series_breakdown.get("Others", 0) + count
-        
-        # Recent additions (last 10) - reversed so newest shows first
-        # Enhance with main series information
-        from scripts.series_config import find_main_series_for_subseries
-        recent_additions = df.tail(10).to_dict('records')
-        recent_additions.reverse()  # Reverse to show newest first
-        
-        # Add main series information to each recent addition
-        for item in recent_additions:
-            subseries = item.get('Series', '')
-            if subseries:
-                main_series = find_main_series_for_subseries(subseries)
-                item['Main Series'] = main_series if main_series else 'Others'
-            else:
-                item['Main Series'] = 'Others'
-        
-        # Collection goals
-        milestones = [10, 25, 50, 100, 250, 500, 1000]
-        next_milestone = None
-        for milestone in milestones:
-            if total_models < milestone:
-                next_milestone = milestone
-                break
-        
-        collection_goals = {
-            "current_count": total_models,
-            "next_milestone": next_milestone,
-            "progress_percentage": (total_models / next_milestone * 100) if next_milestone else 100
-        }
-        
-        # Collection insights - more useful and intuitive
-        collection_insights = {}
-        
-        # Top series (most collected)
-        if main_series_breakdown:
-            top_series = sorted(main_series_breakdown.items(), key=lambda x: x[1], reverse=True)
-            collection_insights["top_series"] = dict(top_series[:3])  # Top 3
-        
-        # Collection diversity (how spread out the collection is)
-        if main_series_breakdown and len(main_series_breakdown) > 0:
-            # Calculate diversity as percentage: how evenly distributed the collection is
-            max_count = max(main_series_breakdown.values())
-            min_count = min(main_series_breakdown.values())
-            if max_count > 0:
-                diversity = (1 - (max_count - min_count) / max_count) * 100 if max_count > min_count else 100
-                collection_insights["diversity_score"] = round(diversity, 1)
-            else:
-                collection_insights["diversity_score"] = 0
-        
-        # Most popular subseries (top 5)
-        if series_breakdown:
-            top_subseries = sorted(series_breakdown.items(), key=lambda x: x[1], reverse=True)
-            collection_insights["top_subseries"] = dict(top_subseries[:5])
-        
-        # Series coverage (how many main series categories are represented)
-        if main_series_breakdown:
-            from scripts.series_config import get_all_series
-            all_main_series = get_all_series()
-            covered_series = len(main_series_breakdown)
-            total_possible_series = len(all_main_series)
-            collection_insights["series_coverage"] = {
-                "covered": covered_series,
-                "total": total_possible_series,
-                "percentage": round((covered_series / total_possible_series * 100) if total_possible_series > 0 else 0, 1)
-            }
-        
-        # Model name insights (common words only, no average length)
-        model_column = 'Model Name' if 'Model Name' in df.columns else df.columns[1] if len(df.columns) > 1 else None
-        if model_column:
-            model_names = df[model_column].dropna().astype(str)
-            # Filter out common stop words and very short words
-            stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'series'}
-            all_words = []
-            for name in model_names:
-                words = [w.lower().strip('.,!?()[]{}') for w in name.split() if len(w) > 2 and w.lower() not in stop_words]
-                all_words.extend(words)
-            word_counts = Counter(all_words)
-            # Get top meaningful words
-            collection_insights["common_words"] = dict(word_counts.most_common(8))
-        
+        analytics = get_collection_statistics()
         return JSONResponse(content={
             "success": True,
-            "analytics": {
-                "total_models": total_models,
-                "series_breakdown": series_breakdown,
-                "main_series_breakdown": main_series_breakdown,
-                "recent_additions": recent_additions,
-                "collection_goals": collection_goals,
-                "collection_insights": collection_insights
-            }
+            "analytics": analytics
         })
         
     except Exception as e:
@@ -658,10 +314,14 @@ async def series_management_page(request: Request):
 async def get_series_config() -> JSONResponse:
     """Get current series configuration"""
     try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+        from manage_series import get_series_config
+        
+        config = get_series_config()
         return JSONResponse(content={
             "success": True,
-            "series_options": SERIES_OPTIONS,
-            "series_metadata": SERIES_METADATA
+            "series_options": config["series_options"],
+            "series_metadata": config["series_metadata"]
         })
     except Exception as e:
         return JSONResponse(
@@ -673,278 +333,106 @@ async def get_series_config() -> JSONResponse:
 async def add_field(field: AddFieldModel) -> JSONResponse:
     """Add a new field/column to the Excel file"""
     try:
-        # Create backup before adding field
-        if not create_backup(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to create backup"}
-            )
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'add-field'))
+        from add_field import add_field as add_field_func
         
-        # Validate field name
-        field_name = field.field_name.strip()
-        if not field_name:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Field name cannot be empty"}
-            )
-        
-        if len(field_name) > 50:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Field name is too long (max 50 characters)"}
-            )
-        
-        # Check for invalid characters
-        invalid_chars = ['/', '\\', '?', '*', '[', ']', ':', ';']
-        if any(char in field_name for char in invalid_chars):
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Field name contains invalid characters: {', '.join(invalid_chars)}"}
-            )
-        
-        # Load workbook
-        if not os.path.exists(EXCEL_FILE_PATH):
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": "Excel file not found"}
-            )
-        
-        wb = load_workbook(EXCEL_FILE_PATH)
-        ws = wb.active
-        
-        # Check if field already exists
-        headers = [cell.value for cell in ws[1]]
-        if field_name in headers:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Field '{field_name}' already exists"}
-            )
-        
-        # Add the new field
-        new_column = len(headers) + 1
-        ws.cell(row=1, column=new_column, value=field_name)
-        
-        # Save workbook
-        wb.save(EXCEL_FILE_PATH)
-        
-        return JSONResponse(content={
-            "success": True,
-            "message": f"Field '{field_name}' added successfully!",
-            "column_index": new_column
-        })
+        result = add_field_func(field.field_name)
+        return JSONResponse(content=result)
         
     except Exception as e:
+        error_msg = str(e)
+        status_code = 400 if "already exists" in error_msg or "cannot be empty" in error_msg or "too long" in error_msg or "invalid characters" in error_msg else 500
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
+            status_code=status_code,
+            content={"success": False, "error": error_msg}
         )
 
 @app.post("/api/series/update")
 async def update_series_config(update: SeriesUpdateModel) -> JSONResponse:
     """Update series configuration"""
     try:
-        # Import series config functions
-        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+        from manage_series import add_subseries, remove_subseries
         
         if update.action == 'add':
-            if update.main_series not in SERIES_OPTIONS:
-                SERIES_OPTIONS[update.main_series] = []
-            if update.subseries not in SERIES_OPTIONS[update.main_series]:
-                SERIES_OPTIONS[update.main_series].append(update.subseries)
-                # Save to file
-                if save_series_config():
-                    return JSONResponse(content={
-                        "success": True,
-                        "message": f"Subseries '{update.subseries}' added to '{update.main_series}' successfully!"
-                    })
-                else:
-                    return JSONResponse(
-                        status_code=500,
-                        content={"success": False, "error": "Failed to save configuration to file"}
-                    )
-            else:
-                return JSONResponse(
-                    status_code=400,
-                    content={"success": False, "error": f"Subseries '{update.subseries}' already exists in '{update.main_series}'"}
-                )
+            result = add_subseries(update.main_series, update.subseries)
+            return JSONResponse(content=result)
         elif update.action == 'remove':
-            if update.main_series in SERIES_OPTIONS:
-                if update.subseries in SERIES_OPTIONS[update.main_series]:
-                    SERIES_OPTIONS[update.main_series].remove(update.subseries)
-                    # Save to file
-                    if save_series_config():
-                        return JSONResponse(content={
-                            "success": True,
-                            "message": f"Subseries '{update.subseries}' removed from '{update.main_series}' successfully!"
-                        })
-                    else:
-                        return JSONResponse(
-                            status_code=500,
-                            content={"success": False, "error": "Failed to save configuration to file"}
-                        )
-        
-        return JSONResponse(
-            status_code=400,
-            content={"success": False, "error": "Invalid action or series not found"}
-        )
+            result = remove_subseries(update.main_series, update.subseries)
+            return JSONResponse(content=result)
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Invalid action"}
+            )
     except Exception as e:
+        error_msg = str(e)
+        status_code = 400 if "not found" in error_msg or "already exists" in error_msg else 500
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
+            status_code=status_code,
+            content={"success": False, "error": error_msg}
         )
 
 @app.post("/api/series/rename")
 async def rename_series(rename: RenameSeriesModel) -> JSONResponse:
     """Rename a main series"""
     try:
-        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+        from manage_series import rename_series as rename_series_func
         
-        if rename.old_name not in SERIES_OPTIONS:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": f"Series '{rename.old_name}' not found"}
-            )
-        
-        if rename.new_name in SERIES_OPTIONS:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Series '{rename.new_name}' already exists"}
-            )
-        
-        # Rename the series
-        subseries_list = SERIES_OPTIONS.pop(rename.old_name)
-        SERIES_OPTIONS[rename.new_name] = subseries_list
-        
-        # Rename metadata if it exists
-        if rename.old_name in SERIES_METADATA:
-            SERIES_METADATA[rename.new_name] = SERIES_METADATA.pop(rename.old_name)
-        
-        # Save to file
-        if save_series_config():
-            return JSONResponse(content={
-                "success": True,
-                "message": f"Series '{rename.old_name}' renamed to '{rename.new_name}' successfully!"
-            })
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to save configuration to file"}
-            )
+        result = rename_series_func(rename.old_name, rename.new_name)
+        return JSONResponse(content=result)
     except Exception as e:
+        error_msg = str(e)
+        status_code = 404 if "not found" in error_msg else 400 if "already exists" in error_msg else 500
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
+            status_code=status_code,
+            content={"success": False, "error": error_msg}
         )
 
 @app.post("/api/series/rename-subseries")
 async def rename_subseries(rename: RenameSubseriesModel) -> JSONResponse:
     """Rename a subseries"""
     try:
-        from scripts.series_config import SERIES_OPTIONS
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+        from manage_series import rename_subseries as rename_subseries_func
         
-        if rename.main_series not in SERIES_OPTIONS:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": f"Series '{rename.main_series}' not found"}
-            )
-        
-        if rename.old_name not in SERIES_OPTIONS[rename.main_series]:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": f"Subseries '{rename.old_name}' not found in '{rename.main_series}'"}
-            )
-        
-        if rename.new_name in SERIES_OPTIONS[rename.main_series]:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Subseries '{rename.new_name}' already exists in '{rename.main_series}'"}
-            )
-        
-        # Rename the subseries
-        index = SERIES_OPTIONS[rename.main_series].index(rename.old_name)
-        SERIES_OPTIONS[rename.main_series][index] = rename.new_name
-        
-        # Save to file
-        if save_series_config():
-            return JSONResponse(content={
-                "success": True,
-                "message": f"Subseries '{rename.old_name}' renamed to '{rename.new_name}' successfully!"
-            })
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to save configuration to file"}
-            )
+        result = rename_subseries_func(rename.main_series, rename.old_name, rename.new_name)
+        return JSONResponse(content=result)
     except Exception as e:
+        error_msg = str(e)
+        status_code = 404 if "not found" in error_msg else 400 if "already exists" in error_msg else 500
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
+            status_code=status_code,
+            content={"success": False, "error": error_msg}
         )
 
 @app.post("/api/series/add")
 async def add_series(series: AddSeriesModel) -> JSONResponse:
     """Add a new main series"""
     try:
-        from scripts.series_config import SERIES_OPTIONS, SERIES_METADATA
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
+        from manage_series import add_series as add_series_func
         
-        series_name = series.series_name.strip()
-        
-        if not series_name:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Series name cannot be empty"}
-            )
-        
-        if series_name in SERIES_OPTIONS:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Series '{series_name}' already exists"}
-            )
-        
-        # Add the new series
-        SERIES_OPTIONS[series_name] = []
-        
-        # Add metadata if provided
-        if series.description or series.price_range or series.rarity:
-            SERIES_METADATA[series_name] = {
-                "description": series.description or "No description available",
-                "price_range": series.price_range or "Varies",
-                "rarity": series.rarity or "Unknown"
-            }
-        else:
-            # Add default metadata if none provided
-            SERIES_METADATA[series_name] = {
-                "description": "No description available",
-                "price_range": "Varies",
-                "rarity": "Unknown"
-            }
-        
-        # Save to file
-        if save_series_config():
-            return JSONResponse(content={
-                "success": True,
-                "message": f"Series '{series_name}' added successfully!"
-            })
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": "Failed to save configuration to file"}
-            )
+        result = add_series_func(series.series_name, series.description, series.price_range, series.rarity)
+        return JSONResponse(content=result)
     except Exception as e:
+        error_msg = str(e)
+        status_code = 400 if "already exists" in error_msg or "cannot be empty" in error_msg else 500
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
+            status_code=status_code,
+            content={"success": False, "error": error_msg}
         )
 
 @app.post("/api/series/metadata")
 async def update_series_metadata(metadata: SeriesMetadataModel) -> JSONResponse:
     """Update series metadata"""
     try:
-        # This would require modifying the series_config.py file
-        # For now, return a message that this feature needs CLI access
+        # Metadata updates can be done by renaming or modifying series
+        # This endpoint is kept for future implementation
         return JSONResponse(content={
             "success": False,
-            "message": "Series metadata updates require CLI access. Please use the manage_series.py script or option 9 in the main CLI menu."
+            "message": "Series metadata updates are handled through series rename operations."
         })
     except Exception as e:
         return JSONResponse(

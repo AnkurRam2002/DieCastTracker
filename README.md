@@ -1,79 +1,95 @@
-# 🚗 DieCastTracker - Hot Wheels Collection Management System
+# DieCastTracker - Hot Wheels Collection Management System
 
-A comprehensive Python-based system for managing your Hot Wheels die-cast car collection with Excel integration, statistics, and an intuitive user interface.
+A comprehensive Python-based system for managing your Hot Wheels die-cast car collection with Excel integration, statistics, and an intuitive web interface.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Features](#-features)
-- [Project Structure](#-project-structure)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
-- [Usage Guide](#-usage-guide)
-- [Scripts Overview](#-scripts-overview)
-- [Custom Run Commands](#-custom-run-commands)
-- [Data Management](#-data-management)
-- [Statistics & Analytics](#-statistics--analytics)
-- [Documentation](#-documentation)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Web Interface](#web-interface)
+- [Usage Guide](#usage-guide)
+- [Scripts Overview](#scripts-overview)
+- [Data Management](#data-management)
+- [Statistics & Analytics](#statistics--analytics)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-## ✨ Features
+## Features
 
-### 🎯 Core Functionality
+### Core Functionality
 - **Add Models**: Easily add new Hot Wheels cars to your collection
 - **Update Models**: Edit existing models with automatic backup protection
 - **Delete Models**: Remove models with safety confirmations and backup
 - **Search & Filter**: Find specific models by name, brand, or series
 - **Statistics Dashboard**: Comprehensive analytics of your collection
 - **Field Management**: Add custom fields to track additional data
+- **Preorders Tracking**: Track preorders with seller, models, ETA, pricing, and delivery status
 - **Excel Integration**: Full Excel file support with automatic creation
-- **Automatic Backups**: Timestamped and latest backups before any changes
+- **Automatic Backups**: Smart backup system keeping at most 5 backups per Excel file
 
-### 🚀 User Experience
-- **Interactive Menus**: Beautiful, emoji-rich command-line interface
-- **Modern Web Interface**: Responsive design with edit/delete buttons
+### User Experience
+- **Interactive CLI**: Command-line interface with menu system
+- **Modern Web Interface**: Responsive design with collapsible sidebar navigation
 - **Quick Shortcuts**: Use `#13` format for rapid series selection
 - **Cross-Platform**: Works on Windows, macOS, and Linux
-- **Multiple Launch Options**: Main menu, batch files, and direct scripts
+- **Multiple Launch Options**: CLI menu, web interface, batch files, and direct scripts
 - **Safety Features**: Double confirmation for deletions, automatic backups
 
-### 📊 Analytics & Insights
+### Analytics & Insights
 - **Collection Statistics**: Total count, series breakdown, diversity metrics
-- **Visual Charts**: ASCII-based distribution charts
+- **Preorder Statistics**: Track total value, PO amounts, payment status
+- **Visual Charts**: Distribution charts and progress tracking
 - **Milestone Tracking**: Progress toward collection goals
 - **Recent Additions**: Track your latest acquisitions
 - **Model Analysis**: Common words, average name length, and more
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 DieCastTracker/
-├── 📂 scripts/                 # Python scripts
-│   ├── add_model.py           # Add new cars to collection
-│   ├── search_model.py        # Search existing cars
-│   ├── statistics.py          # Collection analytics
-│   └── add_field.py           # Add custom database fields
-├── 📂 data/                   # Data storage
-│   └── HW_list.xlsx          # Main collection database
-├── 📄 main.py                 # Interactive main launcher
-├── 📄 run.bat                 # Windows batch script
-├── 📄 run.sh                  # Linux/Mac shell script
-├── 📄 package.json            # NPM-style script definitions
-└── 📄 README.md               # This file
+├── pages/                      # Web interface pages
+│   ├── home/                  # Home page with collection listing
+│   ├── add-model/             # Add new models page
+│   ├── add-field/             # Add custom fields page
+│   ├── analytics/             # Analytics and statistics page
+│   ├── preorders/             # Preorders tracking page
+│   └── series-management/     # Series configuration page
+├── static/                    # Static assets (CSS, JS)
+│   ├── shared.css            # Shared styles including sidebar
+│   └── sidebar.js            # Sidebar collapse functionality
+├── utils/                     # Utility modules
+│   ├── backup_utils.py       # Backup management (5 backups max)
+│   └── cleanup_backups.py    # One-time backup cleanup script
+├── data/                      # Data storage
+│   ├── HW_list.xlsx          # Main collection database
+│   ├── preorders.xlsx        # Preorders database
+│   └── backups/              # Automatic backups (5 per file)
+├── app.py                     # FastAPI web application
+├── main.py                    # CLI interactive launcher
+├── start_web.py               # Web server launcher
+├── Desktop_DieCast_Tracker.bat # Desktop launcher for Windows
+├── package.json               # NPM-style script definitions
+└── README.md                  # This file
 ```
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - **Python 3.6+** (tested with Python 3.10)
-- **openpyxl** library for Excel file handling
+- **Required libraries**: openpyxl, pandas, fastapi, uvicorn, jinja2
 
 ### Setup
 1. **Clone or download** this repository
 2. **Install dependencies**:
    ```bash
-   pip install openpyxl
+   pip install -r requirements.txt
+   ```
+   Or install individually:
+   ```bash
+   pip install openpyxl pandas fastapi uvicorn jinja2 python-multipart
    ```
 3. **Navigate to project directory**:
    ```bash
@@ -82,12 +98,25 @@ DieCastTracker/
 
 ### Quick Verification
 ```bash
+# Test CLI interface
 python main.py
+
+# Test web interface
+python start_web.py
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### Option 1: Interactive Main Menu (Recommended)
+### Option 1: Web Interface (Recommended)
+```bash
+python start_web.py
+```
+- Open browser to `http://localhost:8000`
+- Modern, responsive interface
+- All features accessible via sidebar navigation
+- Real-time updates and statistics
+
+### Option 2: Interactive CLI Menu
 ```bash
 python main.py
 ```
@@ -95,71 +124,106 @@ python main.py
 - Navigate through all features
 - Built-in help and system info
 
-### Option 2: Direct Script Execution
+### Option 3: Direct Script Execution
 ```bash
 # Add a new car
-python scripts/add_model.py
+python pages/add-model/add_model.py
 
 # Search your collection
-python scripts/search_model.py
+python pages/home/home.py
 
 # View statistics
-python scripts/statistics.py
-
-# Add custom fields
-python scripts/add_field.py
+python pages/analytics/analytics.py
 ```
 
-### Option 3: Platform-Specific Launchers
+### Option 4: Platform-Specific Launchers
 ```bash
 # Windows
-.\run.bat
+Desktop_DieCast_Tracker.bat
 
-# Linux/Mac
-./run.sh
+# Or use run.bat (if available)
+.\run.bat
 ```
 
-## 📖 Usage Guide
+## Web Interface
+
+### Starting the Web Server
+```bash
+python start_web.py
+```
+The web interface will be available at `http://localhost:8000`
+
+### Available Pages
+- **Home**: View and manage your collection with edit/delete functionality
+- **Add Model**: Add new Hot Wheels cars to your collection
+- **Add Field**: Add custom fields to track additional data
+- **Analytics**: Comprehensive statistics and visualizations
+- **Preorders**: Track preorders with delivery status, pricing, and payment tracking
+- **Series Management**: Configure and manage series/subseries options
+
+### Features
+- **Collapsible Sidebar**: Floating sidebar that can be collapsed for more screen space
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Real-time Updates**: Changes reflect immediately without page refresh
+- **Inline Editing**: Edit models and preorders directly from the listing
+- **Status Management**: Dropdown menus for quick status updates
+- **Payment Tracking**: Automatic calculation of payment done and remaining for preorders
+
+## Usage Guide
 
 ### Adding New Models
 
-1. **Run the add script**:
-   ```bash
-   python scripts/add_model.py
-   ```
+**Via Web Interface:**
+1. Navigate to "Add Model" in the sidebar
+2. Enter model name
+3. Select series and subseries
+4. Click "Add Model"
 
-2. **Enter model name**:
-   - Type the full name: `Ford Mustang GT`
-   - Use shortcuts: `Ford Mustang GT#11` (auto-selects series)
+**Via CLI:**
+1. Run `python main.py` and select option 1
+2. Enter model name (can use `#13` shortcut for series)
+3. Select series and subseries
+4. Continue adding or type `exit` to finish
 
-3. **Select series** (if not using shortcut):
-   - Choose main category (1-4)
-   - Choose sub-series (1-N)
+### Managing Preorders
 
-4. **Continue adding** or type `exit` to finish
+**Via Web Interface:**
+1. Navigate to "Preorders" in the sidebar
+2. Click "Add Preorder" to create a new entry
+3. Fill in seller, models, ETA (month format), pricing, and delivery status
+4. Use the dropdown to update delivery status directly
+5. View payment statistics (Payment Done, Payment Remaining)
+
+**Preorder Fields:**
+- **Seller**: Name of the seller/vendor
+- **Models**: Description of preordered models
+- **ETA**: Expected delivery month (YYYY-MM format)
+- **Total Price**: Total cost of the preorder
+- **PO Amount**: Amount paid upfront
+- **On Arrival Amount**: Amount due on delivery
+- **Delivery Status**: Pending, Shipped, or Delivered
 
 ### Searching Your Collection
 
-1. **Run the search script**:
-   ```bash
-   python scripts/search_model.py
-   ```
+**Via Web Interface:**
+1. Use the search bar on the Home page
+2. Filter by model name, series, or any custom field
 
-2. **Enter search terms**:
-   - Brand names: `Ford`, `Porsche`, `BMW`
-   - Model names: `Mustang`, `911`, `M3`
-   - Partial matches supported
-
-3. **View results** with serial numbers and series info
+**Via CLI:**
+1. Run `python main.py` and select option 2
+2. Enter search terms (brand, model, or partial match)
+3. View results with serial numbers and series info
 
 ### Viewing Statistics
 
-1. **Run the statistics script**:
-   ```bash
-   python scripts/statistics.py
-   ```
+**Via Web Interface:**
+1. Navigate to "Analytics" in the sidebar
+2. View comprehensive collection statistics
+3. See series breakdown and visual charts
 
-2. **Get comprehensive insights**:
+**Via CLI:**
+1. Run `python main.py` and select option 3
+2. Get comprehensive insights including:
    - Total collection count
    - Series breakdown with percentages
    - Most/least popular series
@@ -168,104 +232,70 @@ python scripts/add_field.py
    - Milestone progress
    - Visual distribution charts
 
-## 🔧 Scripts Overview
-
-### `add_model.py`
-- **Purpose**: Add new Hot Wheels cars to your collection
-- **Features**: 
-  - Automatic serial numbering
-  - Series selection with shortcuts
-  - Excel file auto-creation
-  - Input validation
-
-### `search_model.py`
-- **Purpose**: Search and filter your collection
-- **Features**:
-  - Case-insensitive search
-  - Partial matching
-  - Results with full details
-  - Multiple search sessions
-
-### `statistics.py`
-- **Purpose**: Comprehensive collection analytics
-- **Features**:
-  - Basic and detailed statistics
-  - Visual charts and graphs
-  - Milestone tracking
-  - Recent additions display
-  - Collection goals
-
-### `add_field.py`
-- **Purpose**: Extend database schema
-- **Features**:
-  - Add custom columns
-  - Duplicate prevention
-  - Excel file updates
-
-## 🎮 Custom Run Commands
-
-### Main Launcher (`main.py`)
-```bash
-python main.py
-```
-- Interactive menu system
-- One-click access to all features
-- Built-in help and system info
-- Cross-platform compatibility
-
-### Windows Batch Script (`run.bat`)
-```bash
-.\run.bat
-```
-- Double-click to run on Windows
-- Quick command menu
-- Native Windows integration
-- Excel file auto-opening
-
-### Linux/Mac Shell Script (`run.sh`)
-```bash
-./run.sh
-```
-- Unix-style commands
-- Colored output
-- Cross-platform file opening
-
-### NPM-Style Scripts (if npm available)
-```bash
-npm run start    # Launch main menu
-npm run add      # Add new model
-npm run search   # Search models
-npm run stats    # View statistics
-npm run field    # Add new field
-npm run excel    # Open Excel file
-```
-
-## 💾 Data Management
+## Data Management
 
 ### Excel File Structure
-- **Location**: `data/HW_list.xlsx`
-- **Columns**: 
-  - S.No (Serial Number)
-  - Model Name
-  - Series
-  - [Custom fields added via add_field.py]
 
-### Data Backup
-- **Automatic**: Excel file is saved after each operation
-- **Manual**: Copy `data/HW_list.xlsx` to backup location
-- **Version Control**: Consider adding to Git (exclude large Excel files)
+**Main Collection** (`data/HW_list.xlsx`):
+- S.No (Serial Number)
+- Model Name
+- Series
+- [Custom fields added via Add Field page]
+
+**Preorders** (`data/preorders.xlsx`):
+- S.No (Serial Number)
+- Seller
+- Models
+- ETA (YYYY-MM format)
+- Total Price
+- PO Amount
+- On Arrival Amount
+- Delivery Status (Pending/Shipped/Delivered)
+- Date Added
+
+### Automatic Backup System
+
+The system automatically creates backups before any modification:
+
+- **Backup Location**: `data/backups/`
+- **Backup Retention**: Maximum 5 backups per Excel file
+- **Backup Naming**: `{filename}_backup_YYYYMMDD_HHMMSS.xlsx`
+- **Latest Backup**: `{filename}_backup_latest.xlsx` (always updated)
+
+**How It Works:**
+1. Before any write operation, a timestamped backup is created
+2. The "latest" backup is also updated
+3. Old backups beyond 5 are automatically deleted (newest first)
+4. Each Excel file maintains its own set of 5 backups
+
+**Manual Cleanup:**
+If you need to clean up existing backups:
+```bash
+python utils/cleanup_backups.py
+```
 
 ### File Organization
-- **Scripts**: All Python files in `scripts/` folder
-- **Data**: Excel file in `data/` folder
-- **Launchers**: Main scripts in root directory
+- **Web Pages**: All HTML/CSS/JS in `pages/` folder
+- **Static Assets**: CSS and JS in `static/` folder
+- **Data**: Excel files in `data/` folder
+- **Backups**: Automatic backups in `data/backups/` folder
+- **Utilities**: Helper scripts in `utils/` folder
 
-## 📊 Statistics & Analytics
+## Statistics & Analytics
 
 ### Collection Overview
 - **Total Cars**: Complete count of your collection
 - **Series Breakdown**: Count and percentage for each series
 - **Diversity Metrics**: How varied your collection is
+
+### Preorder Statistics
+- **Total Preorders**: Count of all preorders
+- **Total Value**: Sum of all preorder total prices
+- **PO Amount**: Total amount paid upfront
+- **On Arrival**: Total amount due on delivery
+- **Payment Done**: PO amounts + on-arrival for Shipped/Delivered items
+- **Payment Remaining**: On-arrival amounts for Pending items
+- **Status Breakdown**: Count by delivery status
 
 ### Detailed Analysis
 - **Most Popular Series**: Your most collected series
@@ -274,28 +304,11 @@ npm run excel    # Open Excel file
 - **Average Name Length**: Statistical analysis of naming
 
 ### Visual Charts
-- **ASCII Bar Charts**: Text-based distribution visualization
-- **Series Comparison**: Easy visual comparison of series sizes
+- **Distribution Charts**: Visual representation of series distribution
 - **Progress Tracking**: Visual representation of collection growth
+- **Milestone Tracking**: Automatic milestone detection (10, 25, 50, 100, 250, 500, 1000)
 
-### Milestone Tracking
-- **Goal Setting**: Automatic milestone detection (10, 25, 50, 100, 250, 500, 1000)
-- **Progress Display**: Percentage complete toward next milestone
-- **Motivation**: Clear indication of cars needed for next goal
-
-## 📚 Documentation
-
-### Additional Guides
-- **[Quick Start Guide](docs/QUICK_START.md)** - Fastest ways to get started with npm commands and batch files
-- **[Web Application Guide](docs/README_WEB.md)** - Complete guide to the modern FastAPI web interface
-- **[WARP Development Guide](docs/WARP.md)** - Technical documentation for developers and contributors
-
-### Getting Help
-- **Quick Start**: Use `docs/QUICK_START.md` for immediate setup
-- **Web Interface**: Check `docs/README_WEB.md` for the modern web application
-- **Development**: See `docs/WARP.md` for technical implementation details
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -312,20 +325,29 @@ npm run excel    # Open Excel file
 - **Solution**: Run `chmod +x run.sh`
 
 #### Import errors
-- **Cause**: Missing openpyxl library
-- **Solution**: Run `pip install openpyxl`
+- **Cause**: Missing required libraries
+- **Solution**: Run `pip install -r requirements.txt`
+
+#### Web interface not starting
+- **Cause**: Port 8000 may be in use
+- **Solution**: Close other applications using port 8000, or modify `start_web.py` to use a different port
+
+#### Backup errors
+- **Cause**: Insufficient disk space or permissions
+- **Solution**: Check disk space and ensure write permissions for `data/backups/` directory
 
 ### File Path Issues
-- **Scripts**: Use `python scripts/script_name.py`
-- **Data**: Excel file should be in `data/` folder
+- **Scripts**: Use `python pages/page_name/page_name.py`
+- **Data**: Excel files should be in `data/` folder
 - **Working Directory**: Always run from project root
 
 ### Performance Tips
 - **Large Collections**: Statistics may take longer with 1000+ cars
 - **Excel File Size**: Consider archiving old data if file becomes too large
 - **Memory Usage**: Close Excel before running scripts for better performance
+- **Backup Cleanup**: Run `cleanup_backups.py` periodically if you have many old backups
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Setup
 1. Fork the repository
@@ -339,20 +361,20 @@ npm run excel    # Open Excel file
 - Use meaningful variable names
 - Add docstrings to functions
 - Include error handling
+- Remove emojis from code (use text indicators like [SUCCESS], [ERROR])
 
 ### Feature Requests
 - Open an issue with detailed description
 - Include use cases and examples
 - Consider backward compatibility
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🎯 Future Enhancements
+## Future Enhancements
 
 ### Planned Features
-- **Web Interface**: Browser-based management
 - **Mobile App**: Smartphone collection tracking
 - **Cloud Sync**: Google Sheets integration
 - **Barcode Scanning**: QR code support
@@ -371,16 +393,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🚗 Happy Collecting!
+## Happy Collecting!
 
-DieCastTracker makes managing your Hot Wheels collection fun and organized. Whether you're a casual collector or a serious enthusiast, this tool helps you keep track of your cars, analyze your collection, and set goals for the future.
+DieCastTracker makes managing your Hot Wheels collection fun and organized. Whether you're a casual collector or a serious enthusiast, this tool helps you keep track of your cars, analyze your collection, track preorders, and set goals for the future.
 
 **Start your collection journey today!**
 
 ```bash
+# Web Interface (Recommended)
+python start_web.py
+
+# Or CLI Interface
 python main.py
 ```
 
 ---
 
-*Made with ❤️ for Hot Wheels collectors worldwide*
+*Made for Hot Wheels collectors worldwide*

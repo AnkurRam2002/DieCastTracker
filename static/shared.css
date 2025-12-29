@@ -73,3 +73,109 @@ body {
 .smooth-transition {
     transition: all 0.3s ease;
 }
+
+/* Collapsible sidebar styles */
+#sidebar.collapsed {
+    width: 80px !important;
+}
+
+#sidebar.collapsed .sidebar-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#sidebar.collapsed .sidebar-link {
+    justify-content: center;
+    padding: 0.75rem;
+    gap: 0;
+}
+
+#sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+}
+
+#sidebar.collapsed .sidebar-collapse-icon {
+    transform: rotate(180deg);
+}
+
+#sidebar:not(.collapsed) .sidebar-text {
+    opacity: 1;
+    width: auto;
+    transition: opacity 0.3s ease, width 0.3s ease;
+}
+
+#sidebar.collapsed .sidebar-text {
+    transition: opacity 0.3s ease, width 0.3s ease;
+}
+
+#sidebar-collapse-btn {
+    flex-shrink: 0;
+}
+
+#sidebar-collapse-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-collapse-icon {
+    transition: transform 0.3s ease;
+}
+
+/* Sidebar link alignment fixes */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.sidebar-link i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 1;
+}
+
+/* Ensure icons are perfectly centered when collapsed */
+#sidebar.collapsed .sidebar-link {
+    justify-content: center;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+#sidebar.collapsed .sidebar-link i {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fix alignment for expanded state */
+#sidebar:not(.collapsed) .sidebar-link {
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Ensure proper vertical centering for all states */
+.sidebar-link {
+    align-items: center;
+}
+
+/* Fix hover background alignment */
+.sidebar-link:hover,
+.sidebar-link:focus,
+.sidebar-link:active {
+    align-items: center;
+}
+
+/* Active state alignment */
+.sidebar-link.bg-gradient-to-r,
+.sidebar-link[class*="bg-gradient"] {
+    align-items: center;
+}

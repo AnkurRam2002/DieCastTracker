@@ -261,60 +261,55 @@
     </style>
 </head>
 <body>
-    <!-- Modern Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg shadow-lg border-b border-white/20 px-4 py-3">
-        <div class="container mx-auto max-w-7xl">
-            <div class="flex items-center justify-between">
-                <a class="flex items-center gap-2 text-white font-bold text-xl hover:text-white transition-all duration-300 hover:-translate-y-0.5" href="/">
-                    <i class="fas fa-car text-2xl bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent drop-shadow-lg"></i> DieCast Tracker
+    <!-- Floating Sidebar Navigation -->
+    <nav id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white/10 backdrop-blur-lg shadow-2xl border-r border-white/20 z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0">
+        <div class="flex flex-col h-full p-4">
+            <!-- Logo/Brand and Toggle -->
+            <div class="mb-8 flex items-center justify-between">
+                <a class="flex items-center gap-2 text-white font-bold text-xl hover:text-white transition-all duration-300 sidebar-brand" href="/">
+                    <i class="fas fa-car text-2xl bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent drop-shadow-lg"></i> 
+                    <span class="sidebar-text hidden md:inline">DieCast Tracker</span>
                 </a>
-                <button class="md:hidden text-white border-2 border-white/30 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors" type="button" onclick="document.getElementById('navbarNav').classList.toggle('hidden')" aria-label="Toggle navigation">
-                    <i class="fas fa-bars"></i>
+                <button id="sidebar-collapse-btn" class="hidden md:flex items-center justify-center w-8 h-8 text-white/80 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-300" aria-label="Toggle sidebar">
+                    <i class="fas fa-chevron-left sidebar-collapse-icon"></i>
                 </button>
-                <div class="hidden md:flex md:items-center md:space-x-1" id="navbarNav">
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/">
-                        <i class="fas fa-home"></i> Home
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/add">
-                        <i class="fas fa-plus"></i> Add Model
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/add-field">
-                        <i class="fas fa-columns"></i> Add Field
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl" href="/analytics">
-                        <i class="fas fa-chart-line"></i> Analytics
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:-translate-y-0.5 hover:text-white" href="/series">
-                        <i class="fas fa-cogs"></i> Series Management
-                    </a>
-                </div>
             </div>
-            <!-- Mobile menu -->
-            <div class="hidden md:hidden mt-4 pb-2" id="mobileNav">
-                <div class="flex flex-col space-y-2">
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/">
-                        <i class="fas fa-home"></i> Home
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/add">
-                        <i class="fas fa-plus"></i> Add Model
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/add-field">
-                        <i class="fas fa-columns"></i> Add Field
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20" href="/analytics">
-                        <i class="fas fa-chart-line"></i> Analytics
-                    </a>
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-xl text-white/90 font-semibold hover:bg-white/15" href="/series">
-                        <i class="fas fa-cogs"></i> Series Management
-                    </a>
-                </div>
+            
+            <!-- Navigation Links -->
+            <div class="flex flex-col space-y-2 flex-1">
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:text-white sidebar-link" href="/" title="Home">
+                    <i class="fas fa-home w-5 flex-shrink-0"></i> <span class="sidebar-text">Home</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:text-white sidebar-link" href="/add" title="Add Model">
+                    <i class="fas fa-plus w-5 flex-shrink-0"></i> <span class="sidebar-text">Add Model</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:text-white sidebar-link" href="/add-field" title="Add Field">
+                    <i class="fas fa-columns w-5 flex-shrink-0"></i> <span class="sidebar-text">Add Field</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-500/30 to-purple-700/30 border border-white/20 shadow-lg transition-all duration-300 sidebar-link" href="/analytics" title="Analytics">
+                    <i class="fas fa-chart-line w-5 flex-shrink-0"></i> <span class="sidebar-text">Analytics</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:text-white sidebar-link" href="/preorders" title="Preorders">
+                    <i class="fas fa-shopping-cart w-5 flex-shrink-0"></i> <span class="sidebar-text">Preorders</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 font-semibold hover:bg-white/15 transition-all duration-300 hover:text-white sidebar-link" href="/series" title="Series Management">
+                    <i class="fas fa-cogs w-5 flex-shrink-0"></i> <span class="sidebar-text">Series Management</span>
+                </a>
             </div>
         </div>
     </nav>
+    
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <button id="sidebar-toggle" class="fixed top-4 left-4 z-50 md:hidden bg-white/10 backdrop-blur-lg text-white border-2 border-white/30 rounded-lg px-3 py-2 hover:bg-white/20 transition-colors" type="button" aria-label="Toggle sidebar">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+    
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden hidden" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden');"></div>
 
     <!-- Main Content -->
-    <main class="pt-20 pb-8">
-        <div class="container mx-auto max-w-7xl px-4">
+    <main id="main-content" class="pb-8 md:ml-64 transition-all duration-300">
+        <div class="container mx-auto max-w-7xl px-4 pt-8">
             <!-- Page Header -->
             <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-8 mb-8 shadow-xl border border-white/20">
                 <h1 class="text-3xl font-bold text-gray-800 mb-2"><i class="fas fa-chart-line text-purple-600"></i> Collection Analytics</h1>
@@ -421,14 +416,19 @@
     </footer>
 
     <script>
-        // Mobile menu toggle
-        document.querySelector('button[onclick*="navbarNav"]')?.addEventListener('click', function() {
-            const mobileNav = document.getElementById('mobileNav');
-            if (window.innerWidth < 768) {
-                mobileNav?.classList.toggle('hidden');
-            }
-        });
+        // Sidebar toggle button (mobile)
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        if (sidebarToggle && sidebar && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('hidden');
+            });
+        }
     </script>
+    <script src="/static/sidebar.js"></script>
     <script>
         let seriesChart, progressChart;
 

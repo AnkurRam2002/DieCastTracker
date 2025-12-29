@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import pandas as pd
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uvicorn
 from openpyxl import load_workbook
 import sys
@@ -59,6 +59,16 @@ class DeleteCarModel(BaseModel):
 # Data model for adding new field
 class AddFieldModel(BaseModel):
     field_name: str
+
+# Data model for preorders
+class PreorderModel(BaseModel):
+    seller: str
+    models: str
+    eta: Optional[str] = None
+    total_price: Optional[float] = None
+    po_amount: Optional[float] = None
+    on_arrival_amount: Optional[float] = None
+    delivery_status: Optional[str] = "Pending"
 
 # Data model for series management
 class SeriesUpdateModel(BaseModel):
@@ -298,6 +308,166 @@ async def get_analytics() -> JSONResponse:
             "analytics": analytics
         })
         
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+# Preorders Routes
+@app.get("/preorders", response_class=HTMLResponse)
+async def preorders_page(request: Request):
+    """Preorders management page"""
+    return templates.TemplateResponse("preorders/preorders.html", {"request": request})
+
+@app.get("/api/preorders")
+async def get_preorders() -> JSONResponse:
+    """Get all preorders as JSON"""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'preorders'))
+        from preorders import load_preorders_data
+        import json
+        import math
+        
+        df = load_preorders_data()
+        if df is None:
+            return JSONResponse(content={
+                "success": True,
+                "data": [],
+                "message": "No preorders found"
+            })
+        
+        # Convert to dict and clean up any problematic values
+        data = df.to_dict('records')
+        
+        # Clean data for JSON serialization - replace inf, -inf, NaN
+        def clean_value(value):
+            if value is None:
+                return ""
+            if isinstance(value, float):
+                if math.isinf(value) or math.isnan(value):
+                    return ""
+                # Convert large floats to string to avoid JSON issues
+                try:
+                    # Check if value is within JSON range
+                    json.dumps(value)
+                    return value
+                except (OverflowError, ValueError):
+                    return ""
+            if pd.isna(value):
+                return ""
+            # Handle string values that might contain 'inf' or 'nan'
+            if isinstance(value, str):
+                if value.lower() in ['inf', '-inf', 'nan', '']:
+                    return ""
+            return value
+        
+        # Clean all values in the data
+        cleaned_data = []
+        for record in data:
+            cleaned_record = {}
+            for key, value in record.items():
+                cleaned_record[key] = clean_value(value)
+            cleaned_data.append(cleaned_record)
+        
+        return JSONResponse(content={
+            "success": True,
+            "data": cleaned_data,
+            "total_records": len(cleaned_data),
+            "message": f"Successfully loaded {len(cleaned_data)} preorders"
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.post("/api/preorders")
+async def add_preorder_endpoint(preorder: PreorderModel) -> JSONResponse:
+    """Add a new preorder"""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'preorders'))
+        from preorders import add_preorder as add_preorder_func
+        
+        result = add_preorder_func(
+            preorder.seller,
+            preorder.models,
+            preorder.eta,
+            preorder.total_price,
+            preorder.po_amount,
+            preorder.on_arrival_amount
+        )
+        return JSONResponse(content=result)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.put("/api/preorders/{serial_number}")
+async def update_preorder(serial_number: int, updates: dict) -> JSONResponse:
+    """Update an existing preorder"""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'preorders'))
+        from preorders import update_preorder as update_preorder_func
+        
+        # Map frontend field names to Excel column names
+        mapped_updates = {}
+        field_mapping = {
+            'seller': 'Seller',
+            'models': 'Models',
+            'eta': 'ETA',
+            'total_price': 'Total Price',
+            'po_amount': 'PO Amount',
+            'on_arrival_amount': 'On Arrival Amount',
+            'delivery_status': 'Delivery Status'
+        }
+        
+        for key, value in updates.items():
+            if key in field_mapping:
+                mapped_updates[field_mapping[key]] = value
+        
+        update_preorder_func(serial_number, mapped_updates)
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Successfully updated preorder #{serial_number}!"
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.delete("/api/preorders/{serial_number}")
+async def delete_preorder_endpoint(serial_number: int) -> JSONResponse:
+    """Delete a preorder"""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'preorders'))
+        from preorders import delete_preorder as delete_preorder_func
+        
+        delete_preorder_func(serial_number)
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Successfully deleted preorder #{serial_number}!"
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+@app.get("/api/preorders/statistics")
+async def get_preorders_statistics() -> JSONResponse:
+    """Get preorders statistics"""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'preorders'))
+        from preorders import get_preorders_statistics
+        
+        stats = get_preorders_statistics()
+        return JSONResponse(content={
+            "success": True,
+            "statistics": stats
+        })
     except Exception as e:
         return JSONResponse(
             status_code=500,

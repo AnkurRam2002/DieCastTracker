@@ -201,7 +201,7 @@ The web interface will be available at `http://localhost:8000`
 - **Total Price**: Total cost of the preorder
 - **PO Amount**: Amount paid upfront
 - **On Arrival Amount**: Amount due on delivery
-- **Delivery Status**: Pending, Shipped, or Delivered
+- **Delivery Status**: Pending, Paid, Shipped, or Delivered
 
 ### Searching Your Collection
 
@@ -250,7 +250,7 @@ The web interface will be available at `http://localhost:8000`
 - Total Price
 - PO Amount
 - On Arrival Amount
-- Delivery Status (Pending/Shipped/Delivered)
+- Delivery Status (Pending/Paid/Shipped/Delivered)
 - Date Added
 
 ### Automatic Backup System
@@ -293,7 +293,7 @@ python utils/cleanup_backups.py
 - **Total Value**: Sum of all preorder total prices
 - **PO Amount**: Total amount paid upfront
 - **On Arrival**: Total amount due on delivery
-- **Payment Done**: PO amounts + on-arrival for Shipped/Delivered items
+- **Payment Done**: PO amounts + on-arrival for Paid/Shipped/Delivered items
 - **Payment Remaining**: On-arrival amounts for Pending items
 - **Status Breakdown**: Count by delivery status
 

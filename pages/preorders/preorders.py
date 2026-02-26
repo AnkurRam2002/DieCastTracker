@@ -317,7 +317,7 @@ def get_preorders_statistics():
                     break
         
         # Calculate Payment Done and Payment Remaining
-        # Payment Done = All PO Amount + On Arrival Amount for Shipped/Delivered items
+        # Payment Done = All PO Amount + On Arrival Amount for Paid/Shipped/Delivered items
         # Payment Remaining = On Arrival Amount for Pending items
         payment_done = total_po_amount  # Start with all PO amounts
         payment_remaining = 0
@@ -330,8 +330,8 @@ def get_preorders_statistics():
                 on_arrival = safe_float(row.get(on_arrival_col, 0))
                 delivery_status = str(row.get(status_col, "Pending")).strip()
                 
-                # If status is Shipped or Delivered, add on_arrival to payment_done
-                if delivery_status.lower() in ["shipped", "delivered"]:
+                # If status is Paid, Shipped or Delivered, add on_arrival to payment_done
+                if delivery_status.lower() in ["paid", "shipped", "delivered"]:
                     payment_done += on_arrival
                 # If status is Pending, add to payment_remaining
                 elif delivery_status.lower() == "pending":

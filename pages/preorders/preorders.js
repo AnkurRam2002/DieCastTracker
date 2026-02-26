@@ -2,6 +2,12 @@
 class PreordersManager {
     constructor() {
         this.preorders = [];
+        this.filters = {
+            seller: '',
+            status: '',
+            eta: '',
+            etaMode: 'before'
+        };
         this.init();
     }
 
@@ -47,6 +53,31 @@ class PreordersManager {
         // Form submission
         document.getElementById('preorder-form').addEventListener('submit', (e) => {
             this.handleSubmit(e);
+        });
+
+        // Search/Filter events
+        document.getElementById('filter-seller').addEventListener('change', (e) => {
+            this.filters.seller = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('filter-status').addEventListener('change', (e) => {
+            this.filters.status = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('filter-eta').addEventListener('change', (e) => {
+            this.filters.eta = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('filter-eta-mode').addEventListener('change', (e) => {
+            this.filters.etaMode = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('clear-filters-btn').addEventListener('click', () => {
+            this.clearFilters();
         });
 
         // Sidebar collapse button (desktop)
@@ -103,7 +134,8 @@ class PreordersManager {
 
             if (result.success) {
                 this.preorders = result.data;
-                this.renderPreorders();
+                this.populateSellerFilter();
+                this.applyFilters();
             } else {
                 throw new Error(result.error || 'Failed to load preorders');
             }
@@ -114,36 +146,107 @@ class PreordersManager {
     }
 
     async loadStatistics() {
-        try {
-            const response = await fetch('/api/preorders/statistics');
-            const result = await response.json();
+        // We'll calculate stats locally based on preorders
+        this.calculateDynamicStats();
+    }
 
-            if (result.success) {
-                this.renderStatistics(result.statistics);
-            } else {
-                console.error('Failed to load statistics:', result.error);
-                // Show default statistics if API fails
-                this.renderStatistics({
-                    total_preorders: 0,
-                    total_value: 0,
-                    total_po_amount: 0,
-                    total_on_arrival: 0,
-                    payment_done: 0,
-                    payment_remaining: 0
-                });
+    populateSellerFilter() {
+        const sellerFilter = document.getElementById('filter-seller');
+        const sellers = [...new Set(this.preorders.map(p => p.Seller).filter(s => s))].sort();
+        
+        // Keep "All Sellers" option
+        sellerFilter.innerHTML = '<option value="" class="bg-indigo-900">All Sellers</option>';
+        
+        sellers.forEach(seller => {
+            const option = document.createElement('option');
+            option.value = seller;
+            option.textContent = seller;
+            option.className = 'bg-indigo-900';
+            sellerFilter.appendChild(option);
+        });
+        
+        // Restore filter value if it was set
+        sellerFilter.value = this.filters.seller;
+    }
+
+    applyFilters() {
+        const filtered = this.preorders.filter(preorder => {
+            const matchesSeller = !this.filters.seller || preorder.Seller === this.filters.seller;
+            const matchesStatus = !this.filters.status || (preorder['Delivery Status'] || 'Pending') === this.filters.status;
+            
+            let matchesETA = true;
+            if (this.filters.eta && preorder.ETA) {
+                const preorderMonth = preorder.ETA.substring(0, 7);
+                if (this.filters.etaMode === 'before') {
+                    matchesETA = preorderMonth <= this.filters.eta;
+                } else {
+                    matchesETA = preorderMonth === this.filters.eta;
+                }
+            } else if (this.filters.eta) {
+                matchesETA = false;
             }
-        } catch (error) {
-            console.error('Error loading statistics:', error);
-            // Show default statistics on error
-            this.renderStatistics({
-                total_preorders: 0,
-                total_value: 0,
-                total_po_amount: 0,
-                total_on_arrival: 0,
-                payment_done: 0,
-                payment_remaining: 0
-            });
-        }
+            
+            return matchesSeller && matchesStatus && matchesETA;
+        });
+
+        this.renderPreorders(filtered);
+        this.calculateDynamicStats(filtered);
+    }
+
+    clearFilters() {
+        this.filters.seller = '';
+        this.filters.status = '';
+        this.filters.eta = '';
+        this.filters.etaMode = 'before';
+        
+        document.getElementById('filter-seller').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('filter-eta').value = '';
+        document.getElementById('filter-eta-mode').value = 'before';
+        
+        this.applyFilters();
+    }
+
+    calculateDynamicStats(data = this.preorders) {
+        let totalValue = 0;
+        let poAmount = 0;
+        let onArrival = 0;
+        let paymentDone = 0;
+        let paymentRemaining = 0;
+
+        const safeParse = (val) => {
+            if (!val || val === '') return 0;
+            const num = parseFloat(String(val).replace(/[₹,$\s]/g, ''));
+            return isNaN(num) ? 0 : num;
+        };
+
+        data.forEach(p => {
+            const total = safeParse(p['Total Price']);
+            const po = safeParse(p['PO Amount']);
+            const arrival = safeParse(p['On Arrival Amount']);
+            const status = (p['Delivery Status'] || 'Pending').toLowerCase();
+
+            totalValue += total;
+            poAmount += po;
+            onArrival += arrival;
+            
+            // Payment Done = All PO Amount + On Arrival Amount for Paid/Shipped/Delivered items
+            paymentDone += po;
+            if (['paid', 'shipped', 'delivered'].includes(status)) {
+                paymentDone += arrival;
+            } else if (status === 'pending') {
+                paymentRemaining += arrival;
+            }
+        });
+
+        this.renderStatistics({
+            total_preorders: data.length,
+            total_value: totalValue,
+            total_po_amount: poAmount,
+            total_on_arrival: onArrival,
+            payment_done: paymentDone,
+            payment_remaining: paymentRemaining
+        });
     }
 
     formatAmount(value) {
@@ -204,21 +307,21 @@ class PreordersManager {
         `;
     }
 
-    renderPreorders() {
+    renderPreorders(data = this.preorders) {
         const tbody = document.getElementById('preorders-tbody');
         
-        if (this.preorders.length === 0) {
+        if (data.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="9" class="text-center py-8 text-white/60">
-                        No preorders found. Click "Add Preorder" to get started.
+                        No matching preorders found.
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tbody.innerHTML = this.preorders.map(preorder => {
+        tbody.innerHTML = data.map(preorder => {
             const statusClass = this.getStatusClass(preorder['Delivery Status'] || 'Pending');
             return `
                 <tr>
@@ -241,6 +344,7 @@ class PreordersManager {
                         <div class="relative inline-block">
                             <select class="status-dropdown ${statusClass}" data-serial="${preorder['S.No']}" onchange="preordersManager.updateStatus(this.dataset.serial, this.value)" title="Change delivery status">
                                 <option value="Pending" ${(preorder['Delivery Status'] || 'Pending') === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Paid" ${(preorder['Delivery Status'] || 'Pending') === 'Paid' ? 'selected' : ''}>Paid</option>
                                 <option value="Shipped" ${(preorder['Delivery Status'] || 'Pending') === 'Shipped' ? 'selected' : ''}>Shipped</option>
                                 <option value="Delivered" ${(preorder['Delivery Status'] || 'Pending') === 'Delivered' ? 'selected' : ''}>Delivered</option>
                             </select>
@@ -268,6 +372,8 @@ class PreordersManager {
             return 'status-delivered';
         } else if (statusLower === 'shipped') {
             return 'status-shipped';
+        } else if (statusLower === 'paid') {
+            return 'status-paid';
         } else {
             return 'status-pending';
         }

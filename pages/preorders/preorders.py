@@ -15,6 +15,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.backup_utils import create_backup
 from openpyxl import load_workbook, Workbook
 
+# Import database utilities
+from utils.database import SessionLocal, Preorder
+
 # Path to the preorders Excel file
 PREORDERS_FILE_PATH = os.path.join("data", "preorders.xlsx")
 
@@ -112,6 +115,26 @@ def add_preorder(seller, models, eta, total_price, po_amount, on_arrival_amount,
         # Save workbook
         wb.save(PREORDERS_FILE_PATH)
         
+        # Database Insertion (Dual Write)
+        try:
+            db = SessionLocal()
+            new_preorder = Preorder(
+                serial_number=serial_number,
+                seller=seller.strip() if seller else "",
+                models=models.strip() if models else "",
+                eta=eta_formatted,
+                total_price=float(total_price) if total_price else None,
+                po_amount=float(po_amount) if po_amount else None,
+                on_arrival_amount=float(on_arrival_amount) if on_arrival_amount else None,
+                delivery_status=delivery_status,
+                date_added=datetime.now().strftime("%Y-%m-%d")
+            )
+            db.add(new_preorder)
+            db.commit()
+            db.close()
+        except Exception as db_err:
+            print(f"Database error (Excel saved): {db_err}")
+            
         return {
             "success": True,
             "serial_number": serial_number,
@@ -188,6 +211,38 @@ def update_preorder(serial_number, updates):
         
         # Save workbook
         wb.save(PREORDERS_FILE_PATH)
+
+        # Database Update (Dual Write)
+        try:
+            db = SessionLocal()
+            preorder = db.query(Preorder).filter(Preorder.serial_number == serial_number).first()
+            if preorder:
+                # Map Excel field names to model fields
+                field_mapping = {
+                    'Seller': 'seller',
+                    'Models': 'models',
+                    'ETA': 'eta',
+                    'Total Price': 'total_price',
+                    'PO Amount': 'po_amount',
+                    'On Arrival Amount': 'on_arrival_amount',
+                    'Delivery Status': 'delivery_status'
+                }
+                for excel_field, value in updates.items():
+                    model_field = field_mapping.get(excel_field)
+                    if model_field:
+                        # Handle numeric fields
+                        if model_field in ['total_price', 'po_amount', 'on_arrival_amount']:
+                            try:
+                                setattr(preorder, model_field, float(value) if value else None)
+                            except:
+                                pass
+                        else:
+                            setattr(preorder, model_field, str(value).strip() if value else "")
+                db.commit()
+            db.close()
+        except Exception as db_err:
+            print(f"Database error (Excel saved): {db_err}")
+
         return True
     except Exception as e:
         raise Exception(f"Error updating preorder: {str(e)}")
@@ -225,6 +280,22 @@ def delete_preorder(serial_number):
         
         # Save workbook
         wb.save(PREORDERS_FILE_PATH)
+
+        # Database Delete (Dual Write)
+        try:
+            db = SessionLocal()
+            db.query(Preorder).filter(Preorder.serial_number == serial_number).delete()
+            
+            # Re-number serial numbers in database to match Excel
+            all_preorders = db.query(Preorder).order_by(Preorder.serial_number).all()
+            for idx, po in enumerate(all_preorders, 1):
+                po.serial_number = idx
+                
+            db.commit()
+            db.close()
+        except Exception as db_err:
+            print(f"Database error (Excel saved): {db_err}")
+
         return True
     except Exception as e:
         raise Exception(f"Error deleting preorder: {str(e)}")

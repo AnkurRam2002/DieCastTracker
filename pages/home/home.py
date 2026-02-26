@@ -15,6 +15,9 @@ from openpyxl import load_workbook
 # Path to the Excel file
 EXCEL_FILE_PATH = os.path.join("data", "HW_list.xlsx")
 
+# Import database utilities
+from utils.database import SessionLocal, Car, Subseries
+
 def load_excel_data():
     """Load data from the Excel file"""
     try:
@@ -63,6 +66,29 @@ def update_model(serial_number: int, updates: dict):
         
         # Save workbook
         wb.save(EXCEL_FILE_PATH)
+        
+        # Database Update (Dual Write)
+        try:
+            db = SessionLocal()
+            car = db.query(Car).filter(Car.serial_number == serial_number).first()
+            if car:
+                # Map Excel field names to model fields
+                if "Model Name" in updates:
+                    car.model_name = str(updates["Model Name"]).strip()
+                if "Series" in updates: # Stores subseries name in Excel
+                    new_sub_name = str(updates["Series"]).strip()
+                    sub_obj = db.query(Subseries).filter(Subseries.name == new_sub_name).first()
+                    if sub_obj:
+                        car.subseries_id = sub_obj.id
+                    else:
+                        # Fallback or create if it doesn't exist? 
+                        # For now, let's just log or skip since it should be in config
+                        print(f"Subseries '{new_sub_name}' not found in database.")
+                db.commit()
+            db.close()
+        except Exception as db_err:
+            print(f"Database error (Excel saved): {db_err}")
+            
         return True
     except Exception as e:
         raise Exception(f"Error updating model: {str(e)}")
@@ -100,6 +126,23 @@ def delete_model(serial_number: int):
         
         # Save workbook
         wb.save(EXCEL_FILE_PATH)
+        
+        # Database Delete (Dual Write)
+        try:
+            db = SessionLocal()
+            # Delete and then re-sync serial numbers in DB to match Excel renumbering
+            db.query(Car).filter(Car.serial_number == serial_number).delete()
+            
+            # Re-number serial numbers in database to match Excel's new numbers
+            all_cars = db.query(Car).order_by(Car.serial_number).all()
+            for idx, car in enumerate(all_cars, 1):
+                car.serial_number = idx
+            
+            db.commit()
+            db.close()
+        except Exception as db_err:
+            print(f"Database error (Excel saved): {db_err}")
+            
         return True
     except Exception as e:
         raise Exception(f"Error deleting model: {str(e)}")

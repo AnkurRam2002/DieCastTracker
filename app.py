@@ -142,8 +142,8 @@ async def get_data() -> JSONResponse:
         # Try Database first
         db = SessionLocal()
         try:
-            # Query cars with joined subseries and series
-            cars = db.query(Car).join(Subseries).join(Series).all()
+            # Query cars with joined subseries and series, ordered by serial number
+            cars = db.query(Car).join(Subseries).join(Series).order_by(Car.serial_number).all()
             if cars:
                 data = []
                 for car in cars:
@@ -421,7 +421,7 @@ async def get_preorders() -> JSONResponse:
         # Try Database first
         db = SessionLocal()
         try:
-            preorders = db.query(Preorder).all()
+            preorders = db.query(Preorder).order_by(Preorder.serial_number).all()
             if preorders:
                 data = []
                 for po in preorders:

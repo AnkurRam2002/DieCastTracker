@@ -4,8 +4,8 @@
   "description": "Hot Wheels Die-Cast Collection Management System (Relational Web App)",
   "main": "app.py",
   "scripts": {
-    "start": "python app.py",
-    "dev": "python app.py",
+    "start": "uvicorn app:app --host 0.0.0.0 --port 8000",
+    "dev": "uvicorn app:app --reload",
     "sync": "python scripts/sync_to_postgres.py",
     "excel": "start data\\HW_list.xlsx",
     "install": "pip install -r requirements.txt",

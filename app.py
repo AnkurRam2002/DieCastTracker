@@ -23,7 +23,11 @@ from dotenv import load_dotenv
 # Add paths for page-specific logic
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pages', 'series-management'))
 from series_config import SERIES_OPTIONS, SERIES_METADATA, get_all_series, get_subseries, get_series_info
-from utils.database import SessionLocal, Car, Subseries, Series, Preorder, init_db
+from utils.database import SessionLocal, Car, Subseries, Series, Preorder, User, init_db, get_db
+from utils.auth import get_password_hash, verify_password, create_access_token, decode_access_token
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from fastapi import Depends, Cookie
 
 # Load environment variables
 load_dotenv()
@@ -106,6 +110,15 @@ class SeriesMetadataModel(BaseModel):
     price_range: str = None
     rarity: str = None
 
+class UserSignup(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
 
 def load_excel_data() -> pd.DataFrame:
     """Load data from the Excel file"""
@@ -116,14 +129,79 @@ def load_excel_data() -> pd.DataFrame:
             df = df.fillna("")
             return df
         else:
-            raise FileNotFoundError(f"Excel file not found: {EXCEL_FILE_PATH}")
+            # Create empty df with expected columns if file doesn't exist
+            return pd.DataFrame(columns=["S.No", "Model Name", "Series", "Main Series"])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error loading Excel file: {str(e)}")
+        print(f"Error loading Excel file: {str(e)}")
+        return pd.DataFrame(columns=["S.No", "Model Name", "Series", "Main Series"])
+
+async def get_current_user(access_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)):
+    if not access_token:
+        return None
+    
+    payload = decode_access_token(access_token)
+    if not payload:
+        return None
+    
+    username: str = payload.get("sub")
+    if username is None:
+        return None
+    
+    user = db.query(User).filter(User.username == username).first()
+    return user
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request, user: User = Depends(get_current_user)):
     """Home page with the data table"""
-    return templates.TemplateResponse("home/home.html", {"request": request})
+    return templates.TemplateResponse("home/home.html", {"request": request, "user": user})
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Login page"""
+    return templates.TemplateResponse("auth/login.html", {"request": request})
+
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    """Signup page"""
+    return templates.TemplateResponse("auth/signup.html", {"request": request})
+
+@app.post("/api/signup")
+async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
+    # Check if user exists
+    existing_user = db.query(User).filter((User.username == user_data.username) | (User.email == user_data.email)).first()
+    if existing_user:
+        return JSONResponse(status_code=400, content={"success": False, "error": "Username or email already registered"})
+    
+    hashed_password = get_password_hash(user_data.password)
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hashed_password
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return JSONResponse(content={"success": True, "message": "User registered successfully"})
+
+@app.post("/api/login")
+async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == user_data.username).first()
+    if not user or not verify_password(user_data.password, user.hashed_password):
+        return JSONResponse(status_code=401, content={"success": False, "error": "Invalid username or password"})
+    
+    access_token = create_access_token(data={"sub": user.username})
+    response = JSONResponse(content={"success": True, "message": "Login successful"})
+    response.set_cookie(key="access_token", value=access_token, httponly=True, max_age=3600*24)
+    return response
+
+@app.get("/logout")
+async def logout():
+    response = JSONResponse(content={"success": True, "message": "Logged out"})
+    response.delete_cookie("access_token")
+    # Redirect to home
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=302)
 
 @app.get("/add", response_class=HTMLResponse)
 async def add_model_page(request: Request):

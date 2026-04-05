@@ -25,10 +25,13 @@ app = FastAPI(
     description="Hot Wheels Collection Management System - Web Interface"
 )
 
-# CORS configuration for React development
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://diecast-tracker.netlify.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

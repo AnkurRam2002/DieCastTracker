@@ -10,11 +10,15 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-# Add root and series-management directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'pages', 'series-management'))
-from utils.database import SessionLocal, Series, Subseries, Car, Preorder, init_db
-from series_config import SERIES_OPTIONS, SERIES_METADATA
+# Add root directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from db.session import SessionLocal, init_db
+from db.models import Series, Subseries, Car, Preorder
+
+# Defaults for categories (previously in series_config.py)
+SERIES_OPTIONS = {}
+SERIES_METADATA = {}
 
 # Paths to Excel files
 EXCEL_FILE_PATH = os.path.join("data", "HW_list.xlsx")
@@ -95,8 +99,8 @@ def sync_cars(db: Session, subseries_map: dict):
             # Handle cases where subseries exists in Excel but not in config
             # (Though it should be in config in a perfect world)
             # Find which series it might belong to or use 'Others'
-            from pages.series_management.series_config import find_main_series_for_subseries
-            main_series = find_main_series_for_subseries(sub_name) or "Others"
+            # Fallback to 'Others' or a basic heuristic since series_config is missing
+            main_series = "Others" 
             
             # Check if Subseries exists now (might have been added in this loop)
             existing_sub = db.query(Subseries).filter(Subseries.name == sub_name).first()

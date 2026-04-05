@@ -10,17 +10,28 @@ import shutil
 from datetime import datetime
 import glob
 
-def create_backup(file_path, backup_dir="data/backups", max_backups=5):
+# Project root calculation
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def create_backup(file_path, backup_dir=None, max_backups=5):
     """
     Create a backup of the Excel file before making changes
     Keeps at most max_backups (default 5) backups per file, deleting the oldest ones
     """
     try:
+        # Default backup directory relative to root
+        if backup_dir is None:
+            backup_dir = os.path.join(PROJECT_ROOT, "data", "backups")
+        
+        # Ensure file_path is absolute relative to root if it's not already
+        if not os.path.isabs(file_path):
+            file_path = os.path.join(PROJECT_ROOT, file_path)
+            
         # Create backup directory if it doesn't exist
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
         
-        # Extract base filename without extension (e.g., "HW_list" or "preorders")
+        # Extract base filename without extension
         base_filename = os.path.splitext(os.path.basename(file_path))[0]
         
         # Create backup filename with timestamp
@@ -35,15 +46,14 @@ def create_backup(file_path, backup_dir="data/backups", max_backups=5):
         latest_backup = os.path.join(backup_dir, f"{base_filename}_backup_latest.xlsx")
         shutil.copy2(file_path, latest_backup)
         
-        # Clean up old backups - keep only the most recent max_backups
+        # Clean up old backups
         cleanup_old_backups(backup_dir, base_filename, max_backups)
         
         print(f"[SUCCESS] Backup created: {backup_filename}")
-        print(f"[SUCCESS] Latest backup: {base_filename}_backup_latest.xlsx")
         return True
         
     except Exception as e:
-        print(f"[ERROR] Error creating backup: {e}")
+        print(f"[ERROR] Error creating backup for {file_path}: {e}")
         return False
 
 def cleanup_old_backups(backup_dir, base_filename, max_backups=5):

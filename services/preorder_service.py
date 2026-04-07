@@ -79,12 +79,31 @@ class PreorderService:
             if not po:
                 raise EntityNotFoundException("Preorder", str(serial_number))
             
-            for key, value in updates.items():
-                if hasattr(po, key):
-                    if key in ['total_price', 'po_amount', 'on_arrival_amount']:
-                        setattr(po, key, float(value) if value else None)
+            # Map of possible input keys to model attributes
+            key_map = {
+                "Seller": "seller", "seller": "seller",
+                "Models": "models", "models": "models",
+                "ETA": "eta", "eta": "eta",
+                "Total Price": "total_price", "total_price": "total_price",
+                "PO Amount": "po_amount", "po_amount": "po_amount",
+                "On Arrival Amount": "on_arrival_amount", "on_arrival_amount": "on_arrival_amount",
+                "Delivery Status": "delivery_status", "delivery_status": "delivery_status"
+            }
+
+            for raw_key, value in updates.items():
+                model_key = key_map.get(raw_key, raw_key.lower().replace(" ", "_"))
+                if hasattr(po, model_key):
+                    if model_key in ['total_price', 'po_amount', 'on_arrival_amount']:
+                        try:
+                            # Handle string numbers with currency or commas if they slip through
+                            if isinstance(value, str):
+                                value = value.replace('₹', '').replace(',', '').strip()
+                            setattr(po, model_key, float(value) if value and str(value).strip() else 0.0)
+                        except (ValueError, TypeError):
+                            setattr(po, model_key, 0.0)
                     else:
-                        setattr(po, key, str(value).strip() if value else "")
+                        setattr(po, model_key, str(value).strip() if value is not None else "")
+            
             db.commit()
             db.refresh(po)
         except Exception as e:
@@ -104,6 +123,7 @@ class PreorderService:
             
             if target_row:
                 headers = [cell.value for cell in ws[1]]
+                # Map model attributes to Excel headers
                 field_mapping = {
                     'seller': 'Seller',
                     'models': 'Models',
@@ -114,11 +134,12 @@ class PreorderService:
                     'delivery_status': 'Delivery Status'
                 }
                 
-                for key, value in updates.items():
-                    excel_field = field_mapping.get(key, key)
-                    if excel_field in headers:
-                        col_index = headers.index(excel_field) + 1
-                        ws.cell(row=target_row, column=col_index, value=str(value).strip() if value else "")
+                # Use the updated data from the DB object `po` to ensure Excel stays in sync
+                for attr, excel_header in field_mapping.items():
+                    if excel_header in headers:
+                        col_index = headers.index(excel_header) + 1
+                        val = getattr(po, attr)
+                        ws.cell(row=target_row, column=col_index, value=val if val is not None else "")
                 
                 ExcelService.save_workbook(wb, PreorderService.PREORDERS_FILE_PATH)
         except Exception as e:

@@ -51,13 +51,13 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
     setLoading(true);
     try {
       const res = await preorderService.update(preorder['S.No'], {
-        Seller: formData.seller,
-        Models: formData.models,
-        ETA: formData.eta,
-        'Total Price': formData.total_price,
-        'PO Amount': formData.po_amount,
-        'On Arrival Amount': formData.on_arrival_amount,
-        'Delivery Status': formData.delivery_status
+        seller: formData.seller,
+        models: formData.models,
+        eta: formData.eta,
+        total_price: formData.total_price,
+        po_amount: formData.po_amount,
+        on_arrival_amount: formData.on_arrival_amount,
+        delivery_status: formData.delivery_status
       });
       if (res.success) {
         onSuccess();

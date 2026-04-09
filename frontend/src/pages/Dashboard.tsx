@@ -10,6 +10,10 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [mainSeriesFilter, setMainSeriesFilter] = useState('');
+  const [seriesFilter, setSeriesFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
   // Edit/Delete State
   const [editingModel, setEditingModel] = useState<any>(null);
@@ -72,14 +76,53 @@ export const Dashboard: React.FC = () => {
   };
 
   const filtered = useMemo(() => {
-    if (!search) return data;
-    const q = search.toLowerCase();
-    return data.filter(row =>
-      Object.values(row).some(v => String(v).toLowerCase().includes(q))
-    );
-  }, [data, search]);
+    let result = [...data];
+
+    // 1. Filter by Search
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(row =>
+        Object.values(row).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+
+    // 2. Filter by Main Series
+    if (mainSeriesFilter) {
+      result = result.filter(row => row['Main Series'] === mainSeriesFilter);
+    }
+
+    // 3. Filter by Series (Subseries)
+    if (seriesFilter) {
+      result = result.filter(row => row['Series'] === seriesFilter);
+    }
+
+    // 4. Sort
+    result.sort((a, b) => {
+      const valA = a['S.No'] || 0;
+      const valB = b['S.No'] || 0;
+      return sortOrder === 'asc' ? valA - valB : valB - valA;
+    });
+
+    return result;
+  }, [data, search, mainSeriesFilter, seriesFilter, sortOrder]);
 
   const totalModels = stats?.total_models ?? data.length;
+
+  // Extract unique filter options from stats if available, otherwise from data
+  const mainSeriesOptions = useMemo(() => {
+    if (stats?.column_info?.['Main Series']?.top_values) {
+      return Object.keys(stats.column_info['Main Series'].top_values).sort();
+    }
+    return Array.from(new Set(data.map(r => r['Main Series'] || 'Others'))).sort();
+  }, [data, stats]);
+
+  const seriesOptions = useMemo(() => {
+    let relevantData = data;
+    if (mainSeriesFilter) {
+      relevantData = data.filter(r => r['Main Series'] === mainSeriesFilter);
+    }
+    return Array.from(new Set(relevantData.map(r => r['Series'] || ''))).filter(Boolean).sort();
+  }, [data, mainSeriesFilter]);
 
   return (
     <div className="space-y-8 pb-20">
@@ -127,22 +170,86 @@ export const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Search ── */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[260px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search models, series…"
-            className="input pl-11"
-          />
+      {/* ── Search & Filters Bar ── */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[260px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search models, series…"
+              className="input pl-11"
+            />
+          </div>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn-ghost gap-2 ${showFilters ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' : ''}`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters {(mainSeriesFilter || seriesFilter) && <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
+          </button>
+          
+          <button 
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="btn-ghost gap-2"
+          >
+            <TrendingUp className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+            {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+          </button>
         </div>
-        <button className="btn-ghost gap-2">
-          <SlidersHorizontal className="w-4 h-4" />
-          Filters
-        </button>
+
+        {/* ── Expanded Filters ── */}
+        {showFilters && (
+          <div className="card bg-white/5 border-white/5 p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="label-xs text-slate-400 ml-1">Main Series</label>
+                <select 
+                  className="select bg-slate-900 border-white/10"
+                  value={mainSeriesFilter}
+                  onChange={e => {
+                    setMainSeriesFilter(e.target.value);
+                    setSeriesFilter(''); // Reset subseries when main series changes
+                  }}
+                >
+                  <option value="">All Main Series</option>
+                  {mainSeriesOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="label-xs text-slate-400 ml-1">Series (Subseries)</label>
+                <select 
+                  className="select bg-slate-900 border-white/10"
+                  value={seriesFilter}
+                  onChange={e => setSeriesFilter(e.target.value)}
+                >
+                  <option value="">All Subseries</option>
+                  {seriesOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-end pb-1">
+                <button 
+                  onClick={() => {
+                    setMainSeriesFilter('');
+                    setSeriesFilter('');
+                    setSearch('');
+                  }}
+                  className="text-amber-500/60 hover:text-amber-400 text-xs font-bold transition-colors ml-auto mb-2"
+                >
+                  Reset all filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Table ── */}

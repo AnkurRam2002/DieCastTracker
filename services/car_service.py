@@ -11,16 +11,13 @@ class CarService:
 
     @staticmethod
     def add_car(db: Session, model_name: str, series_name: str, subseries_name: str):
-        # 1. Update Excel
-        wb = ExcelService.get_workbook()
-        ws = wb.active
-        last_serial_number = ws.max_row
+        from sqlalchemy import func
         
-        # In this app's logic, subseries_name is stored in the "Series" column in Excel
-        ws.append([last_serial_number, model_name.strip(), subseries_name])
-        excel_updated = ExcelService.save_workbook(wb)
+        # 1. Determine next serial number from Database (Primary Source of Truth)
+        max_serial = db.query(func.max(Car.serial_number)).scalar() or 0
+        serial_number = max_serial + 1
         
-        # 2. Update Database (Dual-Write)
+        # 2. Update Database (Dual-Write start)
         try:
             # Find or create series
             series = db.query(Series).filter(Series.name == series_name).first()
@@ -40,98 +37,115 @@ class CarService:
                 db.flush()
             
             new_car = Car(
-                serial_number=last_serial_number,
+                serial_number=serial_number,
                 model_name=model_name.strip(),
                 subseries_id=subseries.id
             )
             db.add(new_car)
             db.commit()
-            return new_car
+            db.refresh(new_car)
         except Exception as e:
             db.rollback()
-            if not excel_updated:
-                raise AppException(f"Failed to save to both Excel and Database: {str(e)}")
-            print(f"[WARNING] Database update failed for add_car: {e}")
-            return None
+            raise AppException(f"Database update failed. No changes were made to Excel: {str(e)}")
+
+        # 3. Update Excel (Delayed Write)
+        try:
+            wb = ExcelService.get_workbook()
+            ws = wb.active
+            # In this app's logic, subseries_name is stored in the "Series" column in Excel
+            ws.append([serial_number, model_name.strip(), subseries_name])
+            ExcelService.save_workbook(wb)
+        except Exception as e:
+            print(f"[WARNING] Excel update failed for add_car (ID {serial_number}): {e}")
+            # We don't fail the whole operation since DB is consistent
+            
+        return new_car
 
     @staticmethod
     def update_car(db: Session, serial_number: int, updates: dict):
-        # 1. Update Excel
-        wb = ExcelService.get_workbook()
-        ws = wb.active
-        
-        target_row = None
-        for row_num in range(2, ws.max_row + 1):
-            if ws.cell(row=row_num, column=1).value == serial_number:
-                target_row = row_num
-                break
-        
-        if not target_row:
-            raise EntityNotFoundException("Car", str(serial_number))
-            
-        headers = [cell.value for cell in ws[1]]
-        for field_name, new_value in updates.items():
-            if field_name in headers:
-                col_index = headers.index(field_name) + 1
-                ws.cell(row=target_row, column=col_index, value=str(new_value).strip() if new_value else "")
-        
-        excel_updated = ExcelService.save_workbook(wb)
-        
-        # 2. Update Database
+        # 1. Update Database First
         try:
             car = db.query(Car).filter(Car.serial_number == serial_number).first()
-            if car:
-                if "Model Name" in updates:
-                    car.model_name = str(updates["Model Name"]).strip()
-                if "Series" in updates: # "Series" in Excel is subseries in DB
-                    new_sub_name = str(updates["Series"]).strip()
-                    # Note: Simplified subseries lookup here, assuming it exists
-                    sub_obj = db.query(Subseries).filter(Subseries.name == new_sub_name).first()
-                    if sub_obj:
-                        car.subseries_id = sub_obj.id
-                db.commit()
-                return car
+            if not car:
+                raise EntityNotFoundException("Car", str(serial_number))
+                
+            if "Model Name" in updates:
+                car.model_name = str(updates["Model Name"]).strip()
+            if "Series" in updates: # "Series" in Excel is subseries in DB
+                new_sub_name = str(updates["Series"]).strip()
+                # Find which series this subseries might belong to (context: usually stays in same main series)
+                sub_obj = db.query(Subseries).filter(Subseries.name == new_sub_name).first()
+                if sub_obj:
+                    car.subseries_id = sub_obj.id
+            
+            db.commit()
+            db.refresh(car)
         except Exception as e:
             db.rollback()
-            if not excel_updated:
-                raise AppException(f"Failed to update both Excel and Database: {str(e)}")
-            print(f"[WARNING] Database update failed for update_car: {e}")
-            return None
+            if isinstance(e, EntityNotFoundException): raise e
+            raise AppException(f"Database update failed. Excel was not modified: {str(e)}")
+
+        # 2. Update Excel Second
+        try:
+            wb = ExcelService.get_workbook()
+            ws = wb.active
+            
+            target_row = None
+            for row_num in range(2, ws.max_row + 1):
+                if ws.cell(row=row_num, column=1).value == serial_number:
+                    target_row = row_num
+                    break
+            
+            if target_row:
+                headers = [cell.value for cell in ws[1]]
+                for field_name, new_value in updates.items():
+                    if field_name in headers:
+                        col_index = headers.index(field_name) + 1
+                        ws.cell(row=target_row, column=col_index, value=str(new_value).strip() if new_value else "")
+                
+                ExcelService.save_workbook(wb)
+        except Exception as e:
+            print(f"[WARNING] Excel update failed for update_car (ID {serial_number}): {e}")
+            
+        return car
 
     @staticmethod
     def delete_car(db: Session, serial_number: int):
-        # 1. Update Excel
-        wb = ExcelService.get_workbook()
-        ws = wb.active
-        
-        target_row = None
-        for row_num in range(2, ws.max_row + 1):
-            if ws.cell(row=row_num, column=1).value == serial_number:
-                target_row = row_num
-                break
-        
-        if not target_row:
-            raise EntityNotFoundException("Car", str(serial_number))
-            
-        ws.delete_rows(target_row)
-        # Renumber
-        for row_num in range(2, ws.max_row + 1):
-            ws.cell(row=row_num, column=1, value=row_num - 1)
-            
-        excel_updated = ExcelService.save_workbook(wb)
-        
-        # 2. Update Database
+        # 1. Update Database First (Primary)
         try:
+            car = db.query(Car).filter(Car.serial_number == serial_number).first()
+            if not car:
+                raise EntityNotFoundException("Car", str(serial_number))
+                
             db.query(Car).filter(Car.serial_number == serial_number).delete()
-            # Re-sync serial numbers
+            # Re-sync serial numbers in DB
             all_cars = db.query(Car).order_by(Car.serial_number).all()
             for idx, car in enumerate(all_cars, 1):
                 car.serial_number = idx
             db.commit()
-            return True
         except Exception as e:
             db.rollback()
-            if not excel_updated:
-                raise AppException(f"Failed to delete from both Excel and Database: {str(e)}")
-            print(f"[WARNING] Database delete failed for delete_car: {e}")
-            return False
+            if isinstance(e, EntityNotFoundException): raise e
+            raise AppException(f"Database delete failed. Excel was not modified: {str(e)}")
+
+        # 2. Update Excel Second
+        try:
+            wb = ExcelService.get_workbook()
+            ws = wb.active
+            
+            target_row = None
+            for row_num in range(2, ws.max_row + 1):
+                if ws.cell(row=row_num, column=1).value == serial_number:
+                    target_row = row_num
+                    break
+            
+            if target_row:
+                ws.delete_rows(target_row)
+                # Renumber Excel
+                for row_num in range(2, ws.max_row + 1):
+                    ws.cell(row=row_num, column=1, value=row_num - 1)
+                ExcelService.save_workbook(wb)
+        except Exception as e:
+            print(f"[WARNING] Excel delete failed for delete_car (ID {serial_number}): {e}")
+            
+        return True

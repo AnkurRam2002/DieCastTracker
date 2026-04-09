@@ -25,7 +25,6 @@ export const AddModel: React.FC = () => {
       if (res.success) {
         setSuccess(res.message || 'Model added to collection!');
         setForm({ model_name: '', series: '', subseries: '' });
-        setTimeout(() => navigate('/'), 2000);
       } else {
         setError(res.error || 'Failed to add model.');
       }

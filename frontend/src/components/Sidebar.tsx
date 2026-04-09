@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard,
   ShoppingCart, 
   BarChart3, 
   Layers,
   PlusCircle, 
-  LogOut,
   Car,
   ChevronRight,
   Menu,
@@ -23,7 +22,6 @@ const navItems = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const inner = (
@@ -83,25 +81,6 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-white/5 space-y-2">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-2xl bg-white/[0.02] border border-white/5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <span className="text-amber-400 text-xs font-black">DC</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-slate-200 text-xs font-bold truncate">Collector</p>
-            <p className="text-slate-600 text-[9px] uppercase tracking-widest font-bold">Pro Account</p>
-          </div>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-2xl text-slate-500 hover:bg-red-500/8 hover:text-red-400 transition-all text-sm font-semibold"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </button>
-      </div>
     </div>
   );
 

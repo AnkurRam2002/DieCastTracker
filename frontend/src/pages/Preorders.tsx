@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { preorderService } from '../services/api';
 import { Table } from '../components/Table';
-import { Plus, Search, Filter, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { cn } from '../utils/cn';
 import AddPreorderModal from '../components/AddPreorderModal';
 import EditPreorderModal from '../components/EditPreorderModal';
@@ -19,6 +19,7 @@ export const Preorders: React.FC = () => {
   const [sellerFilter, setSellerFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,13 +41,24 @@ export const Preorders: React.FC = () => {
     Array.from(new Set(preorders.map(p => p.Seller).filter(Boolean))).sort(),
     [preorders]);
 
-  const filtered = useMemo(() => preorders.filter(p => {
-    return (
-      (!sellerFilter || p.Seller === sellerFilter) &&
-      (!statusFilter || p['Delivery Status'] === statusFilter) &&
-      (!search || `${p.Models} ${p.Seller}`.toLowerCase().includes(search.toLowerCase()))
-    );
-  }), [preorders, sellerFilter, statusFilter, search]);
+  const filtered = useMemo(() => {
+    let result = preorders.filter(p => {
+      return (
+        (!sellerFilter || p.Seller === sellerFilter) &&
+        (!statusFilter || p['Delivery Status'] === statusFilter) &&
+        (!search || `${p.Models} ${p.Seller}`.toLowerCase().includes(search.toLowerCase()))
+      );
+    });
+
+    // Sort
+    result.sort((a, b) => {
+      const valA = a['S.No'] || 0;
+      const valB = b['S.No'] || 0;
+      return sortOrder === 'asc' ? valA - valB : valB - valA;
+    });
+
+    return result;
+  }, [preorders, sellerFilter, statusFilter, search, sortOrder]);
 
   const safeParse = (v: any) => parseFloat(String(v).replace(/[₹,\s]/g, '')) || 0;
   const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
@@ -116,7 +128,12 @@ export const Preorders: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      <AddPreorderModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchPreorders} />
+      <AddPreorderModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={fetchPreorders}
+        sellers={sellers}
+      />
       {selectedPreorder && (
         <EditPreorderModal
           isOpen={isEditModalOpen}
@@ -168,7 +185,7 @@ export const Preorders: React.FC = () => {
         </div>
 
         {[
-          { label: 'Total Models', value: statsData.totalRecords, color: 'text-white' },
+          { label: 'Total Preorders', value: statsData.totalRecords, color: 'text-white' },
           { label: 'Initial PO',    value: fmt(statsData.totalPO), color: 'text-slate-400' },
           { label: 'On Arrival',   value: fmt(statsData.totalArrival), color: 'text-slate-400' },
           { label: 'Pending Total', value: fmt(statsData.remaining), color: 'text-red-400' },
@@ -200,6 +217,14 @@ export const Preorders: React.FC = () => {
           <option value="">All Statuses</option>
           {['Pending','Paid','Shipped','Delivered'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+
+        <button 
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          className="btn-ghost gap-2 ml-auto"
+        >
+          <TrendingUp className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+          {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+        </button>
       </div>
 
       <Table

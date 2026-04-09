@@ -6,7 +6,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { 
-  TrendingUp, Layers, Target, Zap, Brain, Trophy, 
+  TrendingUp, Layers, Target, Brain, Trophy, 
   History, IndianRupee, PieChart, Activity, ShoppingCart, 
   ChevronRight, Calendar
 } from 'lucide-react';
@@ -134,12 +134,11 @@ export const Analytics: React.FC = () => {
       </header>
 
       {/* KPI Nerve Center */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { icon: Layers,       label: 'Operational Units', value: stats.total_models,                      color: 'text-amber-400',   bg: 'bg-amber-500/10',    border: 'border-amber-500/20' },
-          { icon: IndianRupee,  label: 'Active Equity',     value: `₹${preorders?.total_value?.toLocaleString()}`, color: 'text-blue-400',    bg: 'bg-blue-500/10',     border: 'border-blue-500/20' },
-          { icon: ShoppingCart, label: 'Liability (PO)',    value: `₹${(preorders?.payment_remaining || 0).toLocaleString()}`,             color: 'text-rose-400',    bg: 'bg-rose-500/10',     border: 'border-rose-500/20' },
-          { icon: Zap,          label: 'Milestone Progress',value: `${Math.round(stats.collection_goals?.progress_percentage)}%`, color: 'text-emerald-400', bg: 'bg-emerald-500/10',  border: 'border-emerald-500/20' },
+          { icon: IndianRupee,  label: 'Active Equity',     value: `₹${(preorders?.active_paid || 0).toLocaleString()}`, color: 'text-blue-400',    bg: 'bg-blue-500/10',     border: 'border-blue-500/20' },
+          { icon: ShoppingCart, label: 'Liability (PO)',    value: `₹${(preorders?.active_remaining || 0).toLocaleString()}`,             color: 'text-rose-400',    bg: 'bg-rose-500/10',     border: 'border-rose-500/20' },
         ].map(({ icon: Icon, label, value, color, bg, border }) => (
           <div key={label} className="card card-accent p-6 group relative overflow-hidden">
             <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${bg} opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`} />

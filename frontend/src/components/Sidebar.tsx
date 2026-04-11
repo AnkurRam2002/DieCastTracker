@@ -9,7 +9,9 @@ import {
   Car,
   ChevronRight,
   Menu,
-  X
+  X,
+  Tags,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
@@ -18,7 +20,9 @@ const navItems = [
   { icon: PlusCircle,      label: 'Add Model',   path: '/add',       section: null },
   { icon: ShoppingCart,    label: 'Preorders',   path: '/preorders', section: 'Tracking' },
   { icon: BarChart3,       label: 'Analytics',   path: '/analytics', section: null },
-  { icon: Layers,          label: 'Series',      path: '/series',    section: 'Management' },
+  { icon: Tags,            label: 'Brands',      path: '/manage/brands',    section: 'Management' },
+  { icon: FolderOpen,      label: 'Series',      path: '/manage/series',    section: 'Management' },
+  { icon: Layers,          label: 'Subseries',   path: '/manage/subseries', section: 'Management' },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -33,7 +37,7 @@ export const Sidebar: React.FC = () => {
             <Car className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <div className="text-white font-black tracking-tight text-base leading-tight">DieCast</div>
+            <div className="text-white font-black tracking-tight text-base leading-tight">Model</div>
             <div className="text-amber-500 text-[9px] font-black uppercase tracking-[0.25em] leading-tight">Tracker Pro</div>
           </div>
         </NavLink>

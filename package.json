@@ -4,43 +4,26 @@
   "description": "Hot Wheels Die-Cast Collection Management System (Relational Web App)",
   "main": "app.py",
   "scripts": {
-    "start": "uvicorn app:app --host 0.0.0.0 --port 8000",
-    "dev": "uvicorn app:app --reload",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:dev": "cd frontend && npm run dev",
     "sync": "python scripts/sync_to_postgres.py",
-    "excel": "start data\\HW_list.xlsx",
-    "install": "pip install -r requirements.txt",
-    "freeze": "pip freeze > requirements.txt",
-    "test": "python -c \"print('DieCastTracker is working!')\""
+    "excel": "start data\\HW_list.xlsx"
   },
-  "keywords": [
-    "hot-wheels",
-    "die-cast",
-    "collection",
-    "tracker",
-    "python",
-    "excel",
-    "fastapi",
-    "web-app",
-    "cli",
-    "management"
-  ],
-  "author": "Ankur Ram",
-  "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {},
-  "python": {
-    "dependencies": [
-      "fastapi",
-      "uvicorn[standard]",
-      "pandas",
-      "openpyxl",
-      "jinja2",
-      "python-multipart"
-    ]
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.12.1",
+    "morgan": "^1.10.0",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   },
   "engines": {
-    "python": ">=3.12",
-    "node": ">=14.0.0"
+    "node": ">=20.0.0"
   },
   "repository": {
     "type": "git",

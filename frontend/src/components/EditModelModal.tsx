@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { dataService } from '../services/api';
 import { X, Car, Layers, List, Save, AlertCircle } from 'lucide-react';
 
@@ -12,19 +12,21 @@ interface EditModelModalProps {
 export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose, onSave, model }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [seriesOptions, setSeriesOptions] = useState<Record<string, string[]>>({});
+  const [seriesOptions, setSeriesOptions] = useState<Record<string, Record<string, string[]>>>({});
   const [formData, setFormData] = useState({
     model_name: '',
     series: '',
-    subseries: ''
+    subseries: '',
+    brand: ''
   });
 
   useEffect(() => {
     if (isOpen && model) {
       setFormData({
         model_name: model['Model Name'] || '',
-        series: model['Main Series'] || '',
-        subseries: model['Series'] || ''
+        series: model['Series'] || '',
+        subseries: model['Subseries'] || '',
+        brand: model['Brand'] || 'Hot Wheels'
       });
       
       dataService.getDropdownOptions()
@@ -33,6 +35,18 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
     }
     setError('');
   }, [isOpen, model]);
+
+  // Derive series list for current brand
+  const availableSeries = useMemo(() => {
+    const brandData = seriesOptions[formData.brand] || {};
+    return Object.keys(brandData).sort();
+  }, [seriesOptions, formData.brand]);
+
+  // Derive subseries list for current series
+  const availableSubseries = useMemo(() => {
+    const brandData = seriesOptions[formData.brand] || {};
+    return (brandData[formData.series] || []).sort();
+  }, [seriesOptions, formData.brand, formData.series]);
 
   if (!isOpen) return null;
 
@@ -44,9 +58,10 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
       await onSave({
         serial_number: model['S.No'],
         updates: {
-          model_name: formData.model_name,
-          series: formData.series,
-          subseries: formData.subseries
+          "Model Name": formData.model_name,
+          "Series": formData.series,
+          "Subseries": formData.subseries,
+          "brand": formData.brand
         }
       });
       onClose();
@@ -83,19 +98,37 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 label-xs translate-x-1">
-              <Car className="w-3 h-3 text-amber-500" />
-              Identity
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.model_name}
-              onChange={e => setFormData({ ...formData, model_name: e.target.value })}
-              className="input"
-              placeholder="Model designation..."
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs translate-x-1">
+                <Car className="w-3 h-3 text-amber-500" />
+                Model Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.model_name}
+                onChange={e => setFormData({ ...formData, model_name: e.target.value })}
+                className="input"
+                placeholder="Model designation..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs translate-x-1">
+                <AlertCircle className="w-3 h-3 text-amber-500" />
+                Brand
+              </label>
+              <select
+                required
+                value={formData.brand}
+                onChange={e => setFormData({ ...formData, brand: e.target.value, series: '', subseries: '' })}
+                className="select"
+              >
+                {Object.keys(seriesOptions).sort().map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -105,13 +138,13 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
                 Series
               </label>
               <select
-                required
                 value={formData.series}
                 onChange={e => setFormData({ ...formData, series: e.target.value, subseries: '' })}
-                className="select"
+                className="select disabled:opacity-40"
+                disabled={!formData.brand || availableSeries.length === 0}
               >
-                <option value="">Select Series...</option>
-                {Object.keys(seriesOptions).map(s => (
+                <option value="">{availableSeries.length === 0 ? 'No series available' : 'Select Series…'}</option>
+                {availableSeries.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -123,14 +156,13 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
                 Subseries
               </label>
               <select
-                required
                 value={formData.subseries}
                 onChange={e => setFormData({ ...formData, subseries: e.target.value })}
                 className="select disabled:opacity-40"
-                disabled={!formData.series}
+                disabled={!formData.series || availableSubseries.length === 0}
               >
-                <option value="">Select Sub...</option>
-                {(seriesOptions[formData.series] || []).map(sub => (
+                <option value="">{formData.series ? (availableSubseries.length === 0 ? 'No subseries available' : 'Select Sub…') : 'Select a series first'}</option>
+                {availableSubseries.map(sub => (
                   <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/api';
 import { PlusCircle, ArrowLeft, Car, Layers, List, CheckCircle } from 'lucide-react';
@@ -8,14 +8,24 @@ export const AddModel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const [seriesOptions, setSeriesOptions] = useState<Record<string, string[]>>({});
-  const [form, setForm] = useState({ model_name: '', series: '', subseries: '' });
+  const [seriesOptions, setSeriesOptions] = useState<Record<string, Record<string, string[]>>>({});
+  const [form, setForm] = useState({ model_name: '', series: '', subseries: '', brand: 'Hot Wheels' });
 
   useEffect(() => {
     dataService.getDropdownOptions()
       .then(r => { if (r.success) setSeriesOptions(r.series); })
       .catch(console.error);
   }, []);
+
+  const availableSeries = useMemo(() => {
+    const brandData = seriesOptions[form.brand] || {};
+    return Object.keys(brandData).sort();
+  }, [seriesOptions, form.brand]);
+
+  const availableSubseries = useMemo(() => {
+    const brandData = seriesOptions[form.brand] || {};
+    return (brandData[form.series] || []).sort();
+  }, [seriesOptions, form.brand, form.series]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +34,7 @@ export const AddModel: React.FC = () => {
       const res = await dataService.addModel(form);
       if (res.success) {
         setSuccess(res.message || 'Model added to collection!');
-        setForm({ model_name: '', series: '', subseries: '' });
+        setForm({ model_name: '', series: '', subseries: '', brand: form.brand });
       } else {
         setError(res.error || 'Failed to add model.');
       }
@@ -77,37 +87,58 @@ export const AddModel: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* Model Name */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 label-xs">
-              <Car className="w-3.5 h-3.5 text-amber-500" />
-              Model Name <span className="text-amber-500">*</span>
-            </label>
-            <input
-              type="text" required
-              value={form.model_name}
-              onChange={e => setForm({ ...form, model_name: e.target.value })}
-              placeholder="e.g. '17 Ford F-150 Raptor"
-              className="input"
-            />
+          {/* Model Name & Brand Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Model Name */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs">
+                <Car className="w-3.5 h-3.5 text-amber-500" />
+                Model Name <span className="text-amber-500">*</span>
+              </label>
+              <input
+                type="text" required
+                value={form.model_name}
+                onChange={e => setForm({ ...form, model_name: e.target.value })}
+                placeholder="e.g. '17 Ford F-150 Raptor"
+                className="input"
+              />
+            </div>
+
+            {/* Brand */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs">
+                <CheckCircle className="w-3.5 h-3.5 text-amber-500" />
+                Brand <span className="text-amber-500">*</span>
+              </label>
+              <select
+                required
+                value={form.brand}
+                onChange={e => setForm({ ...form, brand: e.target.value, series: '', subseries: '' })}
+                className="select"
+              >
+                {Object.keys(seriesOptions).sort().map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-            {/* Main Series */}
+            {/* Series */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 label-xs">
                 <Layers className="w-3.5 h-3.5 text-amber-500" />
-                Main Series <span className="text-amber-500">*</span>
+                Series
               </label>
               <select
-                required
                 value={form.series}
                 onChange={e => setForm({ ...form, series: e.target.value, subseries: '' })}
-                className="select"
+                className="select disabled:opacity-40"
+                disabled={!form.brand || availableSeries.length === 0}
               >
-                <option value="">Select Series…</option>
-                {Object.keys(seriesOptions).map(s => (
+                <option value="">{availableSeries.length === 0 ? 'No series available' : 'Select Series…'}</option>
+                {availableSeries.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -117,17 +148,16 @@ export const AddModel: React.FC = () => {
             <div className="space-y-2">
               <label className="flex items-center gap-2 label-xs">
                 <List className="w-3.5 h-3.5 text-amber-500" />
-                Subseries <span className="text-amber-500">*</span>
+                Subseries
               </label>
               <select
-                required
-                disabled={!form.series}
+                disabled={!form.series || availableSubseries.length === 0}
                 value={form.subseries}
                 onChange={e => setForm({ ...form, subseries: e.target.value })}
                 className="select disabled:opacity-40"
               >
-                <option value="">{form.series ? 'Select Subseries…' : 'Select a series first'}</option>
-                {(seriesOptions[form.series] || []).map(sub => (
+                <option value="">{form.series ? (availableSubseries.length === 0 ? 'No subseries available' : 'Select Subseries…') : 'Select a series first'}</option>
+                {availableSubseries.map(sub => (
                   <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>
@@ -150,6 +180,7 @@ export const AddModel: React.FC = () => {
               }
             </button>
           </div>
+
         </form>
       </div>
     </div>

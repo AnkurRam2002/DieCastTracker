@@ -8,13 +8,30 @@ const api = axios.create({
 export default api;
 
 export const dataService = {
-  getAll: () => api.get('/api/data').then(res => res.data),
-  getStats: () => api.get('/api/stats').then(res => res.data),
-  search: (query: string) => api.get(`/api/search?q=${query}`).then(res => res.data),
-  addModel: (data: any) => api.post('/api/add-model', data).then(res => res.data),
-  updateModel: (data: any) => api.put('/api/update-model', data).then(res => res.data),
-  deleteModel: (serial_number: number) => api.delete('/api/delete-model', { data: { serial_number } }).then(res => res.data),
-  getDropdownOptions: () => api.get('/api/dropdown-options').then(res => res.data),
+  getAll: () => api.get('/api/models/data').then(res => res.data),
+  getStats: () => api.get('/api/models/stats').then(res => res.data),
+  search: (query: string) => api.get(`/api/models/search?q=${query}`).then(res => res.data),
+  addModel: (data: any) => api.post('/api/models/add', data).then(res => res.data),
+  updateModel: (data: any) => api.put('/api/models/update', data).then(res => res.data),
+  deleteModel: (serial_number: number) => api.delete('/api/models/delete', { data: { serial_number } }).then(res => res.data),
+  getDropdownOptions: () => api.get('/api/models/dropdown-options').then(res => res.data),
+};
+
+export const brandService = {
+  getAll: () => api.get('/api/brands').then(res => res.data),
+  add: (data: any) => api.post('/api/brands/add', data).then(res => res.data),
+  update: (id: string, name: string) => api.put(`/api/brands/${id}`, { name }).then(res => res.data),
+};
+
+export const seriesService = {
+  getAll: () => api.get('/api/series/all').then(res => res.data),
+  getLegacyConfig: () => api.get('/api/series').then(res => res.data),
+  add: (data: any) => api.post('/api/series/add', data).then(res => res.data),
+  update: (id: string, data: any) => api.put(`/api/series/${id}`, data).then(res => res.data),
+  
+  getAllSubseries: () => api.get('/api/series/subseries/all').then(res => res.data),
+  addSubseries: (data: any) => api.post('/api/series/subseries/add', data).then(res => res.data),
+  updateSubseries: (id: string, data: any) => api.put(`/api/series/subseries/${id}`, data).then(res => res.data),
 };
 
 export const preorderService = {
@@ -29,15 +46,6 @@ export const analyticsService = {
   getStatistics: () => api.get('/api/analytics').then(res => res.data),
 };
 
-export const seriesService = {
-  getAll: () => api.get('/api/series').then(res => res.data),
-  getConfig: () => api.get('/api/series').then(res => res.data),
-  update: (data: any) => api.post('/api/series/update', data).then(res => res.data),
-  rename: (data: any) => api.post('/api/series/rename', data).then(res => res.data),
-  renameSubseries: (data: any) => api.post('/api/series/rename-subseries', data).then(res => res.data),
-  add: (data: any) => api.post('/api/series/add', data).then(res => res.data),
-};
-
 export const authService = {
   login: (data: { username: string; password: string }) =>
     api.post('/api/auth/login', data).then(res => res.data),
@@ -46,3 +54,4 @@ export const authService = {
   logout: () => api.post('/api/auth/logout').then(res => res.data),
   me: () => api.get('/api/auth/me').then(res => res.data),
 };
+

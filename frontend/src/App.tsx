@@ -15,7 +15,7 @@ function App() {
           <Route path="/preorders" element={<Preorders />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/add" element={<AddModel />} />
-          <Route path="/series" element={<SeriesManagement />} />
+          <Route path="/manage/:type" element={<SeriesManagement />} />
         </Routes>
       </Layout>
     </Router>

@@ -20,7 +20,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan('dev')); // Logs to console
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URL || 'mongodb://localhost:27017/diecast_tracker';

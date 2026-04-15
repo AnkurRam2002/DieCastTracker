@@ -13,7 +13,7 @@ class ModelService {
       .lean();
   }
 
-  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels") {
+  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "") {
     // 1. Determine next serial number
     const lastModel = await Model.findOne().sort({ serial_number: -1 }).lean();
     const serialNumber = lastModel ? lastModel.serial_number + 1 : 1;
@@ -61,7 +61,8 @@ class ModelService {
       metadata: {
         brand: brand._id,
         series: series ? series._id : null,
-        subseries: subseries ? subseries._id : null
+        subseries: subseries ? subseries._id : null,
+        model_no: modelNo ? String(modelNo).trim() : ""
       }
     });
     await newModel.save();
@@ -76,6 +77,10 @@ class ModelService {
 
     if (updates["Model Name"]) {
       modelObj.model_name = String(updates["Model Name"]).trim();
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, "Model No")) {
+      modelObj.metadata.model_no = updates["Model No"] ? String(updates["Model No"]).trim() : "";
     }
 
     if (updates["Series"] || updates["Subseries"] || updates["brand"] || updates["Brand"]) {

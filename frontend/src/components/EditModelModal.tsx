@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { dataService } from '../services/api';
-import { X, Car, Layers, List, Save, AlertCircle } from 'lucide-react';
+import { X, Car, Layers, List, Save, AlertCircle, Hash } from 'lucide-react';
 
 interface EditModelModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
   const [seriesOptions, setSeriesOptions] = useState<Record<string, Record<string, string[]>>>({});
   const [formData, setFormData] = useState({
     model_name: '',
+    model_no: '',
     series: '',
     subseries: '',
     brand: ''
@@ -24,6 +25,7 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
     if (isOpen && model) {
       setFormData({
         model_name: model['Model Name'] || '',
+        model_no: model['Model No'] || '',
         series: model['Series'] || '',
         subseries: model['Subseries'] || '',
         brand: model['Brand'] || 'Hot Wheels'
@@ -59,6 +61,7 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
         serial_number: model['S.No'],
         updates: {
           "Model Name": formData.model_name,
+          "Model No": formData.model_no,
           "Series": formData.series,
           "Subseries": formData.subseries,
           "brand": formData.brand
@@ -113,6 +116,22 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
                 placeholder="Model designation..."
               />
             </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs translate-x-1">
+                <Hash className="w-3 h-3 text-amber-500" />
+                Model No
+              </label>
+              <input
+                type="text"
+                value={formData.model_no}
+                onChange={e => setFormData({ ...formData, model_no: e.target.value })}
+                className="input"
+                placeholder="Optional model no..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <label className="flex items-center gap-2 label-xs translate-x-1">
                 <AlertCircle className="w-3 h-3 text-amber-500" />

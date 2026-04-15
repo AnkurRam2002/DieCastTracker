@@ -12,7 +12,8 @@ router.get('/data', async (req, res) => {
       "Model Name": m.model_name,
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
-      "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels"
+      "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
+      "Model No": m.metadata.model_no || ""
     }));
 
     res.json({
@@ -28,8 +29,8 @@ router.get('/data', async (req, res) => {
 
 router.post('/add', async (req, res) => {
   try {
-    const { model_name, series, subseries, brand } = req.body;
-    const newM = await ModelService.addModel(model_name, series, subseries, brand);
+    const { model_name, series, subseries, brand, model_no } = req.body;
+    const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no);
     res.json({
       success: true,
       message: `Successfully added '${model_name}' to the collection!`,
@@ -130,7 +131,8 @@ router.get('/search', async (req, res) => {
       "Model Name": m.model_name,
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
-      "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels"
+      "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
+      "Model No": m.metadata.model_no || ""
     }));
 
     res.json({

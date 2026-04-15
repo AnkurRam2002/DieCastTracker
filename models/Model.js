@@ -6,7 +6,8 @@ const modelSchema = new mongoose.Schema({
   metadata: {
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
     series: { type: mongoose.Schema.Types.ObjectId, ref: 'Series', required: false },
-    subseries: { type: mongoose.Schema.Types.ObjectId, ref: 'Subseries', required: false }
+    subseries: { type: mongoose.Schema.Types.ObjectId, ref: 'Subseries', required: false },
+    model_no: { type: String, required: false }
   },
   date_added: { type: Date, default: Date.now }
 }, { timestamps: true });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 interface TableProps {
   columns: string[];
@@ -9,6 +9,27 @@ interface TableProps {
 }
 
 export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions }) => {
+  const renderCell = (row: any, col: string) => {
+    if (col === 'Model Name' && row['Model No']) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="truncate">{row[col]}</span>
+          <span className="relative inline-flex">
+            <span
+              className="peer inline-flex h-6 w-6 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-amber-300 transition-all hover:scale-105 hover:border-amber-400/50 hover:bg-amber-500/20 hover:text-amber-200"
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </span>
+            <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-max -translate-x-1/2 scale-95 rounded-lg border border-amber-500/30 bg-slate-950/95 px-2.5 py-1.5 text-[11px] font-bold tracking-wide text-amber-200 opacity-0 shadow-lg shadow-amber-500/10 backdrop-blur-sm transition-all duration-150 peer-hover:scale-100 peer-hover:opacity-100">
+              {row['Model No']}
+            </span>
+          </span>
+        </div>
+      );
+    }
+    return row[col] !== undefined ? row[col] : '—';
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -76,7 +97,7 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
                     key={col}
                     className={`px-6 py-4 text-sm ${colIdx === 0 ? 'pl-8 font-bold text-slate-400 min-w-[80px]' : 'text-slate-300 font-medium'}`}
                   >
-                    {row[col] !== undefined ? row[col] : '—'}
+                    {renderCell(row, col)}
                   </td>
                 ))}
                 {actions && (

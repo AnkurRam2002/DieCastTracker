@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/api';
-import { PlusCircle, ArrowLeft, Car, Layers, List, CheckCircle } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Car, Layers, List, CheckCircle, Hash } from 'lucide-react';
 
 export const AddModel: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export const AddModel: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [seriesOptions, setSeriesOptions] = useState<Record<string, Record<string, string[]>>>({});
-  const [form, setForm] = useState({ model_name: '', series: '', subseries: '', brand: 'Hot Wheels' });
+  const [form, setForm] = useState({ model_name: '', model_no: '', series: '', subseries: '', brand: 'Hot Wheels' });
 
   useEffect(() => {
     dataService.getDropdownOptions()
@@ -34,7 +34,7 @@ export const AddModel: React.FC = () => {
       const res = await dataService.addModel(form);
       if (res.success) {
         setSuccess(res.message || 'Model added to collection!');
-        setForm({ model_name: '', series: '', subseries: '', brand: form.brand });
+        setForm({ model_name: '', model_no: '', series: '', subseries: '', brand: form.brand });
       } else {
         setError(res.error || 'Failed to add model.');
       }
@@ -87,7 +87,7 @@ export const AddModel: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* Model Name & Brand Row */}
+          {/* Model Name & Model No Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Model Name */}
             <div className="space-y-2">
@@ -104,6 +104,24 @@ export const AddModel: React.FC = () => {
               />
             </div>
 
+            {/* Model No (Optional) */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs">
+                <Hash className="w-3.5 h-3.5 text-amber-500" />
+                Model No <span className="text-slate-500">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={form.model_no}
+                onChange={e => setForm({ ...form, model_no: e.target.value })}
+                placeholder="e.g. HW-2024-015"
+                className="input"
+              />
+            </div>
+          </div>
+
+          {/* Brand / Series / Subseries Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Brand */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 label-xs">
@@ -121,9 +139,6 @@ export const AddModel: React.FC = () => {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
             {/* Series */}
             <div className="space-y-2">

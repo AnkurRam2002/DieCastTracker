@@ -8,14 +8,16 @@ class AnalyticsService {
     // 1. Total Models
     const totalModels = await Model.countDocuments(query);
 
-    // 2. Main Series Breakdown
+    // 2. Breakdown Analysis
     const models = await Model.find(query)
+      .populate('metadata.brand')
       .populate('metadata.series')
       .populate('metadata.subseries')
       .lean();
 
     const seriesCounts = {};
     const subseriesCounts = {};
+    const brandCounts = {};
 
     for (const m of models) {
       const sName = m.metadata.series ? m.metadata.series.name : "Unknown";
@@ -23,6 +25,9 @@ class AnalyticsService {
 
       const subName = m.metadata.subseries ? m.metadata.subseries.name : "Unknown";
       subseriesCounts[subName] = (subseriesCounts[subName] || 0) + 1;
+
+      const bName = m.metadata.brand ? m.metadata.brand.name : "Hot Wheels";
+      brandCounts[bName] = (brandCounts[bName] || 0) + 1;
     }
 
     // 3. Collection Goals
@@ -52,6 +57,7 @@ class AnalyticsService {
 
     // 5. Recent Additions
     const recentModels = await Model.find(query)
+      .populate('metadata.brand')
       .populate('metadata.series')
       .populate('metadata.subseries')
       .sort({ serial_number: -1 })
@@ -63,12 +69,14 @@ class AnalyticsService {
       "Model Name": model.model_name,
       "Series": model.metadata.subseries ? model.metadata.subseries.name : "Unknown",
       "Main Series": model.metadata.series ? model.metadata.series.name : "Unknown",
-      "Brand": model.metadata.brand || "Hot Wheels"
+      "Brand": model.metadata.brand ? model.metadata.brand.name : "Hot Wheels"
     }));
 
     return {
       total_models: totalModels,
       main_series_breakdown: seriesCounts,
+      subseries_breakdown: subseriesCounts,
+      brand_breakdown: brandCounts,
       collection_goals: collectionGoals,
       collection_insights: collectionInsights,
       recent_additions: recentAdditions

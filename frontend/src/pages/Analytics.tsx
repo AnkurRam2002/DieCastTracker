@@ -40,6 +40,7 @@ const COMMON_TOOLTIP = {
 export const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [taxonomicView, setTaxonomicView] = useState<'series' | 'subseries' | 'brands'>('series');
 
   useEffect(() => {
     analyticsService.getStatistics()
@@ -63,9 +64,13 @@ export const Analytics: React.FC = () => {
   const preorders = data.preorders;
 
   // Series Distribution Data
-  const seriesBreakdown = stats.main_series_breakdown || {};
-  const seriesLabels = Object.keys(seriesBreakdown);
-  const seriesValues = Object.values<number>(seriesBreakdown);
+  let breakdown = {};
+  if (taxonomicView === 'series') breakdown = stats.main_series_breakdown || {};
+  else if (taxonomicView === 'subseries') breakdown = stats.subseries_breakdown || {};
+  else if (taxonomicView === 'brands') breakdown = stats.brand_breakdown || {};
+
+  const seriesLabels = Object.keys(breakdown);
+  const seriesValues = Object.values<number>(breakdown);
 
   const barData = {
     labels: seriesLabels,
@@ -164,9 +169,20 @@ export const Analytics: React.FC = () => {
               </h3>
               <p className="label-xs mt-1">High-density series analysis</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="pulse-amber" />
-              <span className="label-xs text-amber-500 font-black">Live Capture</span>
+            <div className="flex items-center gap-3">
+              <select
+                value={taxonomicView}
+                onChange={(e) => setTaxonomicView(e.target.value as any)}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none focus:border-amber-500/50 transition-colors [color-scheme:dark]"
+              >
+                <option value="brands" className="bg-slate-900">Brands</option>
+                <option value="series" className="bg-slate-900">Series</option>
+                <option value="subseries" className="bg-slate-900">Subseries</option>
+              </select>
+              <div className="flex items-center gap-2">
+                <span className="pulse-amber" />
+                <span className="label-xs text-amber-500 font-black">Live Capture</span>
+              </div>
             </div>
           </div>
           <div className="flex-1 min-h-0">
@@ -232,45 +248,8 @@ export const Analytics: React.FC = () => {
       {/* Advanced Intelligence & Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Deep Dive: Top Subseries */}
-        <div className="lg:col-span-4 card p-8 flex flex-col">
-          <h3 className="text-xl font-black text-white flex items-center gap-3 mb-6">
-            <Trophy className="w-5 h-5 text-emerald-500" />
-            Top Sub-Sectors
-          </h3>
-          <div className="space-y-4">
-            {Object.entries(stats.collection_insights?.top_subseries || {}).map(([name, count]: [string, any], idx) => (
-              <div key={name} className="flex items-center justify-between group/item">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-[10px] font-black text-slate-500">
-                    0{idx + 1}
-                  </div>
-                  <span className="text-sm font-black text-slate-300 group-hover/item:text-white transition-colors">{name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-emerald-400">{count}</span>
-                  <div className="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                    <div 
-                      className="h-full bg-emerald-500 transition-all duration-1000" 
-                      style={{ width: `${(count / (Object.values(stats.collection_insights?.top_subseries || {})[0] as number)) * 100}%` }} 
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-black text-amber-500/60 uppercase">Diversity Score</div>
-              <div className="text-xl font-black text-amber-400">{stats.collection_insights?.diversity_score}%</div>
-            </div>
-            <Target className="w-6 h-6 text-amber-500/20" />
-          </div>
-        </div>
-
         {/* Timeline: Recent Additions */}
-        <div className="lg:col-span-8 card p-8 flex flex-col">
+        <div className="lg:col-span-12 card p-8 flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black text-white flex items-center gap-3">
               <History className="w-5 h-5 text-blue-500" />
@@ -284,17 +263,11 @@ export const Analytics: React.FC = () => {
               <div key={item['S.No']} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/30 group/row transition-all hover:bg-white/[0.04]">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-[10px] font-black text-blue-500/60 uppercase tracking-widest mb-1">{item['Main Series']}</div>
+                    <div className="text-[10px] font-black text-blue-500/60 uppercase tracking-widest mb-1">{item['Brand']}</div>
                     <div className="text-sm font-black text-white group-hover/row:text-blue-400 transition-colors uppercase leading-tight">{item['Model Name']}</div>
                   </div>
                   <div className="text-[10px] font-black text-slate-600 bg-white/5 px-2 py-1 rounded-lg border border-white/5 italic">
                     #{item['S.No']}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="tag py-0.5 px-2 !text-[9px] border-white/5 bg-transparent">
-                    <ChevronRight className="w-2.5 h-2.5 opacity-30" />
-                    {item['Series']}
                   </div>
                 </div>
               </div>

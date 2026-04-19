@@ -6,7 +6,7 @@ const seriesSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true }
 }, { timestamps: true });
 
-// Compound index to allow duplicate names across different brands
-seriesSchema.index({ name: 1, brand: 1 }, { unique: true });
+// Compound index to allow duplicate names across different brands and users
+seriesSchema.index({ name: 1, brand: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model('Series', seriesSchema);

@@ -127,12 +127,12 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
                 <select
                   value={formData.delivery_status}
                   onChange={e => setFormData({ ...formData, delivery_status: e.target.value })}
-                  className="select bg-white/5 border-white/10 focus:border-amber-500/50"
+                  className="select bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark]"
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
+                  <option className="bg-slate-900" value="Pending">Pending</option>
+                  <option className="bg-slate-900" value="Paid">Paid</option>
+                  <option className="bg-slate-900" value="Shipped">Shipped</option>
+                  <option className="bg-slate-900" value="Delivered">Delivered</option>
                 </select>
               </div>
             </div>

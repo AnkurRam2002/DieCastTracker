@@ -5,7 +5,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
-export default api;
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const dataService = {
   getAll: () => api.get('/api/models/data').then(res => res.data),
@@ -47,11 +53,11 @@ export const analyticsService = {
 };
 
 export const authService = {
-  login: (data: { username: string; password: string }) =>
-    api.post('/api/auth/login', data).then(res => res.data),
-  signup: (data: { username: string; email: string; password: string }) =>
-    api.post('/api/auth/signup', data).then(res => res.data),
-  logout: () => api.post('/api/auth/logout').then(res => res.data),
-  me: () => api.get('/api/auth/me').then(res => res.data),
+  login: (username: string, password: string) =>
+    api.post('/api/auth/login', { username, password }).then(res => res.data),
+  register: (username: string, password: string) =>
+    api.post('/api/auth/register', { username, password }).then(res => res.data),
+  profile: () => api.get('/api/auth/profile').then(res => res.data),
 };
 
+export default api;

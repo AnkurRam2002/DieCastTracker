@@ -33,7 +33,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+const authRoutes = require('./routes/authRoutes');
+
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/models', modelRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/series', seriesRoutes);

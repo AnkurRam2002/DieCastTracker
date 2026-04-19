@@ -1,13 +1,16 @@
 const Preorder = require('../models/Preorder');
 
 class PreorderService {
-  static async getAllPreorders() {
-    return await Preorder.find().sort({ serial_number: 1 }).lean();
+  static async getAllPreorders(userId) {
+    const query = userId ? { user: userId } : {};
+    return await Preorder.find(query).sort({ serial_number: 1 }).lean();
   }
 
-  static async addPreorder(seller, models, eta, totalPrice, poAmount, onArrivalAmount, deliveryStatus = "Pending") {
-    // 1. Determine next serial number
-    const lastPo = await Preorder.findOne().sort({ serial_number: -1 }).lean();
+  static async addPreorder(seller, models, eta, totalPrice, poAmount, onArrivalAmount, deliveryStatus = "Pending", userId) {
+    const query = userId ? { user: userId } : {};
+
+    // 1. Determine next serial number per user
+    const lastPo = await Preorder.findOne(query).sort({ serial_number: -1 }).lean();
     const serialNumber = lastPo ? lastPo.serial_number + 1 : 1;
     const dateAdded = new Date().toISOString().split('T')[0];
 
@@ -21,14 +24,16 @@ class PreorderService {
       po_amount: poAmount,
       on_arrival_amount: onArrivalAmount,
       delivery_status: deliveryStatus,
-      date_added: dateAdded
+      date_added: dateAdded,
+      user: userId
     });
     await newPo.save();
     return newPo;
   }
 
-  static async updatePreorder(serialNumber, updates) {
-    const po = await Preorder.findOne({ serial_number: serialNumber });
+  static async updatePreorder(serialNumber, updates, userId) {
+    const query = userId ? { user: userId } : {};
+    const po = await Preorder.findOne({ serial_number: serialNumber, ...query });
     if (!po) {
       throw new Error(`Preorder #${serialNumber} not found`);
     }
@@ -62,8 +67,9 @@ class PreorderService {
     return po;
   }
 
-  static async deletePreorder(serialNumber) {
-    const po = await Preorder.findOne({ serial_number: serialNumber });
+  static async deletePreorder(serialNumber, userId) {
+    const query = userId ? { user: userId } : {};
+    const po = await Preorder.findOne({ serial_number: serialNumber, ...query });
     if (!po) {
       throw new Error(`Preorder #${serialNumber} not found`);
     }
@@ -71,7 +77,7 @@ class PreorderService {
     await Preorder.deleteOne({ _id: po._id });
 
     // Re-sync serial numbers
-    const allPos = await Preorder.find().sort({ serial_number: 1 });
+    const allPos = await Preorder.find(query).sort({ serial_number: 1 });
     for (let i = 0; i < allPos.length; i++) {
       const targetSerial = i + 1;
       if (allPos[i].serial_number !== targetSerial) {
@@ -83,8 +89,9 @@ class PreorderService {
     return true;
   }
 
-  static async getStatistics() {
-    const preorders = await Preorder.find().lean();
+  static async getStatistics(userId) {
+    const query = userId ? { user: userId } : {};
+    const preorders = await Preorder.find(query).lean();
     if (!preorders || preorders.length === 0) {
       return {};
     }

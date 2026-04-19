@@ -4,8 +4,9 @@ const Subseries = require('../models/Subseries');
 const Brand = require('../models/Brand');
 
 class ModelService {
-  static async getAllModels() {
-    return await Model.find()
+  static async getAllModels(userId) {
+    const query = userId ? { user: userId } : {};
+    return await Model.find(query)
       .populate('metadata.brand')
       .populate('metadata.series')
       .populate('metadata.subseries')
@@ -13,26 +14,29 @@ class ModelService {
       .lean();
   }
 
-  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "") {
-    // 1. Determine next serial number
-    const lastModel = await Model.findOne().sort({ serial_number: -1 }).lean();
+  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "", userId) {
+    const query = userId ? { user: userId } : {};
+
+    // 1. Determine next serial number logic per user
+    const lastModel = await Model.findOne(query).sort({ serial_number: -1 }).lean();
     const serialNumber = lastModel ? lastModel.serial_number + 1 : 1;
 
     // 2. Find or create brand
-    let brand = await Brand.findOne({ name: brandName.trim() });
+    let brand = await Brand.findOne({ name: brandName.trim(), ...query });
     if (!brand) {
-      brand = new Brand({ name: brandName.trim() });
+      brand = new Brand({ name: brandName.trim(), user: userId });
       await brand.save();
     }
 
     // 3. Find or create series
     let series = null;
     if (seriesName && seriesName.trim()) {
-      series = await Series.findOne({ name: seriesName.trim(), brand: brand._id });
+      series = await Series.findOne({ name: seriesName.trim(), brand: brand._id, ...query });
       if (!series) {
         series = new Series({ 
           name: seriesName.trim(),
-          brand: brand._id
+          brand: brand._id,
+          user: userId
         });
         await series.save();
       }
@@ -43,12 +47,14 @@ class ModelService {
     if (series && subseriesName && subseriesName.trim()) {
       subseries = await Subseries.findOne({
         name: subseriesName.trim(),
-        series: series._id
+        series: series._id,
+        ...query
       });
       if (!subseries) {
         subseries = new Subseries({
           name: subseriesName.trim(),
-          series: series._id
+          series: series._id,
+          user: userId
         });
         await subseries.save();
       }
@@ -58,6 +64,7 @@ class ModelService {
     const newModel = new Model({
       serial_number: serialNumber,
       model_name: modelName.trim(),
+      user: userId,
       metadata: {
         brand: brand._id,
         series: series ? series._id : null,
@@ -69,8 +76,9 @@ class ModelService {
     return await Model.findById(newModel._id).populate('metadata.brand metadata.series metadata.subseries');
   }
 
-  static async updateModel(serialNumber, updates) {
-    const modelObj = await Model.findOne({ serial_number: serialNumber });
+  static async updateModel(serialNumber, updates, userId) {
+    const query = userId ? { user: userId } : {};
+    const modelObj = await Model.findOne({ serial_number: serialNumber, ...query });
     if (!modelObj) {
       throw new Error(`Model with S.No ${serialNumber} not found`);
     }
@@ -89,9 +97,9 @@ class ModelService {
       const subseriesName = (updates["Subseries"] || (modelObj.metadata.subseries ? (await Subseries.findById(modelObj.metadata.subseries)).name : "")).trim();
 
       // 1. Find or create brand
-      let brand = await Brand.findOne({ name: brandName });
+      let brand = await Brand.findOne({ name: brandName, ...query });
       if (!brand) {
-        brand = new Brand({ name: brandName });
+        brand = new Brand({ name: brandName, user: userId });
         await brand.save();
       }
       modelObj.metadata.brand = brand._id;
@@ -99,9 +107,9 @@ class ModelService {
       // 2. Find or create series
       let series = null;
       if (seriesName && seriesName.trim()) {
-        series = await Series.findOne({ name: seriesName.trim(), brand: brand._id });
+        series = await Series.findOne({ name: seriesName.trim(), brand: brand._id, ...query });
         if (!series) {
-          series = new Series({ name: seriesName.trim(), brand: brand._id });
+          series = new Series({ name: seriesName.trim(), brand: brand._id, user: userId });
           await series.save();
         }
       }
@@ -110,9 +118,9 @@ class ModelService {
       // 3. Find or create subseries
       let subseries = null;
       if (series && subseriesName && subseriesName.trim()) {
-        subseries = await Subseries.findOne({ name: subseriesName.trim(), series: series._id });
+        subseries = await Subseries.findOne({ name: subseriesName.trim(), series: series._id, ...query });
         if (!subseries) {
-          subseries = new Subseries({ name: subseriesName.trim(), series: series._id });
+          subseries = new Subseries({ name: subseriesName.trim(), series: series._id, user: userId });
           await subseries.save();
         }
       }
@@ -123,16 +131,17 @@ class ModelService {
     return await Model.findById(modelObj._id).populate('metadata.brand metadata.series metadata.subseries');
   }
 
-  static async deleteModel(serialNumber) {
-    const modelObj = await Model.findOne({ serial_number: serialNumber });
+  static async deleteModel(serialNumber, userId) {
+    const query = userId ? { user: userId } : {};
+    const modelObj = await Model.findOne({ serial_number: serialNumber, ...query });
     if (!modelObj) {
       throw new Error(`Model with S.No ${serialNumber} not found`);
     }
 
     await Model.deleteOne({ _id: modelObj._id });
 
-    // Re-sync serial numbers
-    const allModels = await Model.find().sort({ serial_number: 1 });
+    // Re-sync serial numbers for this user specifically
+    const allModels = await Model.find(query).sort({ serial_number: 1 });
     for (let i = 0; i < allModels.length; i++) {
       const targetSerial = i + 1;
       if (allModels[i].serial_number !== targetSerial) {

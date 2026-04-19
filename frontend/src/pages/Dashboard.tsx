@@ -249,7 +249,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tracking Card (Smaller) */}
         <div className="card card-accent p-6 group">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/5">
@@ -257,7 +256,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="label-xs text-slate-500">Tracking</div>
           </div>
-          <div className="text-2xl font-black text-purple-400">{data[data.length - 1]?.['S.No'] ?? '—'}</div>
+          <div className="text-2xl font-black text-purple-400">{stats?.total_models ?? '—'}</div>
           <div className="label-xs mt-1 text-slate-600">Latest Serial</div>
         </div>
       </div>

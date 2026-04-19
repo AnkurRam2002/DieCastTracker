@@ -81,6 +81,9 @@ export const Preorders: React.FC = () => {
 
   // Removed local useMemo arrays and filtering
 
+  const safeParse = (v: any) => parseFloat(String(v).replace(/[₹,\s]/g, '')) || 0;
+  const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+
   const statsData = useMemo(() => {
     if (!stats) return { totalRecords: 0, totalCommited: 0, totalPO: 0, totalArrival: 0, paymentDone: 0, remaining: 0 };
     return {

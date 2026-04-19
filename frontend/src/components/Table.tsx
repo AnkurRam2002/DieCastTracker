@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 interface TableProps {
@@ -6,17 +6,17 @@ interface TableProps {
   data: any[];
   isLoading?: boolean;
   actions?: (row: any) => React.ReactNode;
-  currentPage: number;
-  totalPages: number;
-  totalRecords: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (limit: number) => void;
+  currentPage?: number;
+  totalPages?: number;
+  totalRecords?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (limit: number) => void;
 }
 
 export const Table: React.FC<TableProps> = ({ 
   columns, data, isLoading, actions,
-  currentPage, totalPages, totalRecords, itemsPerPage,
+  currentPage = 1, totalPages = 1, totalRecords = 0, itemsPerPage = 10,
   onPageChange, onItemsPerPageChange
 }) => {
   const renderCell = (row: any, col: string) => {
@@ -110,48 +110,50 @@ export const Table: React.FC<TableProps> = ({
       </div>
 
       {/* Pagination Footer */}
-      <div className="p-4 border-t border-white/5 bg-white/[0.01] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Rows per page:</span>
-          <select 
-            value={itemsPerPage} 
-            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="bg-slate-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-slate-300 focus:outline-none focus:border-amber-500/50 [color-scheme:dark]"
-          >
-            {[10, 20, 50, 100].map(sz => (
-              <option key={sz} value={sz} className="bg-slate-900 text-slate-300">
-                {sz}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            Showing <span className="text-slate-300">{totalRecords > 0 ? startIndex + 1 : 0}</span> - <span className="text-slate-300">{Math.min(startIndex + data.length, totalRecords)}</span> of <span className="text-slate-300">{totalRecords}</span>
+      {(onPageChange && onItemsPerPageChange) && (
+        <div className="p-4 border-t border-white/5 bg-white/[0.01] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Rows per page:</span>
+            <select 
+              value={itemsPerPage} 
+              onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+              className="bg-slate-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-slate-300 focus:outline-none focus:border-amber-500/50 [color-scheme:dark]"
+            >
+              {[10, 20, 50, 100].map(sz => (
+                <option key={sz} value={sz} className="bg-slate-900 text-slate-300">
+                  {sz}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="text-xs font-bold text-slate-400 px-2 min-w-[60px] text-center">
-              Page <span className="text-slate-200">{currentPage}</span> / {Math.max(totalPages, 1)}
+          <div className="flex items-center gap-6">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              Showing <span className="text-slate-300">{totalRecords > 0 ? startIndex + 1 : 0}</span> - <span className="text-slate-300">{Math.min(startIndex + data.length, totalRecords)}</span> of <span className="text-slate-300">{totalRecords}</span>
             </div>
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages || totalPages === 0}
-              className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="text-xs font-bold text-slate-400 px-2 min-w-[60px] text-center">
+                Page <span className="text-slate-200">{currentPage}</span> / {Math.max(totalPages, 1)}
+              </div>
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || totalPages === 0}
+                className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

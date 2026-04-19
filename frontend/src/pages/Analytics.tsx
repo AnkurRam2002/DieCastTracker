@@ -6,9 +6,9 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { 
-  TrendingUp, Layers, Target, Brain, Trophy, 
+  TrendingUp, Layers, Brain, 
   History, IndianRupee, PieChart, Activity, ShoppingCart, 
-  ChevronRight, Calendar
+  Calendar
 } from 'lucide-react';
 
 ChartJS.register(

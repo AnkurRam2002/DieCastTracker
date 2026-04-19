@@ -16,74 +16,82 @@ const STATUS_STYLES: Record<string, string> = {
 export const Preorders: React.FC = () => {
   const [preorders, setPreorders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+
+  // Pagination & Backend Metadata
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const [sellerFilter, setSellerFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPreorder, setSelectedPreorder] = useState<any>(null);
 
-  const fetchPreorders = () => {
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sellerFilter, statusFilter, sortOrder, itemsPerPage]);
+
+  const fetchPreorders = async () => {
     setLoading(true);
-    preorderService.getAll()
-      .then(r => { if (r.success) setPreorders(r.data); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    try {
+      const [dataRes, statsRes] = await Promise.all([
+        preorderService.getAll({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearch,
+          sellerFilter,
+          statusFilter,
+          sortOrder
+        }),
+        preorderService.getStats()
+      ]);
+      if (dataRes.success) {
+        setPreorders(dataRes.data);
+        setTotalRecords(dataRes.total_records);
+        setTotalPages(dataRes.total_pages);
+      }
+      if (statsRes.success) {
+        setStats(statsRes.statistics);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchPreorders();
-  }, []);
+  }, [currentPage, itemsPerPage, debouncedSearch, sellerFilter, statusFilter, sortOrder]);
 
-  const sellers = useMemo(() =>
-    Array.from(new Set(preorders.map(p => p.Seller).filter(Boolean))).sort(),
-    [preorders]);
-
-  const filtered = useMemo(() => {
-    let result = preorders.filter(p => {
-      return (
-        (!sellerFilter || p.Seller === sellerFilter) &&
-        (!statusFilter || p['Delivery Status'] === statusFilter) &&
-        (!search || `${p.Models} ${p.Seller}`.toLowerCase().includes(search.toLowerCase()))
-      );
-    });
-
-    // Sort
-    result.sort((a, b) => {
-      const valA = a['S.No'] || 0;
-      const valB = b['S.No'] || 0;
-      return sortOrder === 'asc' ? valA - valB : valB - valA;
-    });
-
-    return result;
-  }, [preorders, sellerFilter, statusFilter, search, sortOrder]);
-
-  const safeParse = (v: any) => parseFloat(String(v).replace(/[₹,\s]/g, '')) || 0;
-  const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+  // Removed local useMemo arrays and filtering
 
   const statsData = useMemo(() => {
-    const totalRecords = preorders.length;
-    const totalCommited = preorders.reduce((s, p) => s + safeParse(p['Total Price']), 0);
-    const totalPO = preorders.reduce((s, p) => s + safeParse(p['PO Amount']), 0);
-    const totalArrival = preorders.reduce((s, p) => s + safeParse(p['On Arrival Amount']), 0);
-    
-    const totalPending = preorders.filter(p => 
-      (p['Delivery Status'] || 'Pending') === 'Pending'
-    ).reduce((s, p) => s + safeParse(p['On Arrival Amount']), 0);
-    
-    const paymentDone = totalCommited - totalPending;
-    
+    if (!stats) return { totalRecords: 0, totalCommited: 0, totalPO: 0, totalArrival: 0, paymentDone: 0, remaining: 0 };
     return {
-      totalRecords,
-      totalCommited,
-      totalPO,
-      totalArrival,
-      paymentDone,
-      remaining: totalPending
+      totalRecords: stats.total_preorders,
+      totalCommited: stats.total_value,
+      totalPO: stats.total_po_amount,
+      totalArrival: stats.total_on_arrival,
+      paymentDone: stats.active_paid,
+      remaining: stats.active_remaining
     };
-  }, [preorders]);
+  }, [stats]);
 
   const cycleStatus = async (serialNumber: number, currentStatus: string) => {
     const sequence = ['Pending', 'Paid', 'Shipped', 'Delivered'];
@@ -132,7 +140,7 @@ export const Preorders: React.FC = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={fetchPreorders}
-        sellers={sellers}
+        sellers={[]}
       />
       {selectedPreorder && (
         <EditPreorderModal
@@ -209,7 +217,7 @@ export const Preorders: React.FC = () => {
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)} className="select pl-11 pr-5 w-auto min-w-[160px]">
             <option value="">All Sellers</option>
-            {sellers.map(s => <option key={s} value={s}>{s}</option>)}
+            {/* dynamic sellers removed since we page them, wait for auto-complete later if needed */}
           </select>
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
@@ -229,7 +237,7 @@ export const Preorders: React.FC = () => {
 
       <Table
         columns={['S.No', 'Seller', 'Models', 'ETA', 'Financials', 'Status']}
-        data={filtered.map(p => {
+        data={preorders.map(p => {
           const total = safeParse(p['Total Price']);
           const poAmt = safeParse(p['PO Amount']);
           const status = (p['Delivery Status'] || 'Pending');
@@ -282,6 +290,12 @@ export const Preorders: React.FC = () => {
           };
         })}
         isLoading={loading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
         actions={(row) => (
           <div className="flex justify-end items-center gap-2">
             <button 

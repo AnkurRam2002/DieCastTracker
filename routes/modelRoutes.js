@@ -9,8 +9,19 @@ router.use(protect);
 
 router.get('/data', async (req, res) => {
   try {
-    const modelsList = await ModelService.getAllModels(req.user._id);
-    const data = modelsList.map(m => ({
+    const { page, limit, search, brandFilter, mainSeriesFilter, seriesFilter, sortOrder, tab } = req.query;
+    const result = await ModelService.getAllModels(req.user._id, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 50,
+      search: search || '',
+      brandFilter: brandFilter || '',
+      mainSeriesFilter: mainSeriesFilter || '',
+      seriesFilter: seriesFilter || '',
+      sortOrder: sortOrder || 'asc',
+      tab: tab || 'hotwheels'
+    });
+
+    const data = result.data.map(m => ({
       "S.No": m.serial_number,
       "Model Name": m.model_name,
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
@@ -23,7 +34,9 @@ router.get('/data', async (req, res) => {
       success: true,
       data: data,
       columns: ["S.No", "Model Name", "Subseries", "Series", "Brand"],
-      total_records: data.length
+      total_records: result.total,
+      page: result.page,
+      total_pages: result.totalPages
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

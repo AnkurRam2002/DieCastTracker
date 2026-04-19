@@ -6,15 +6,25 @@ interface TableProps {
   data: any[];
   isLoading?: boolean;
   actions?: (row: any) => React.ReactNode;
+  currentPage: number;
+  totalPages: number;
+  totalRecords: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (limit: number) => void;
 }
 
-export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions }) => {
+export const Table: React.FC<TableProps> = ({ 
+  columns, data, isLoading, actions,
+  currentPage, totalPages, totalRecords, itemsPerPage,
+  onPageChange, onItemsPerPageChange
+}) => {
   const renderCell = (row: any, col: string) => {
     if (col === 'Model Name' && row['Model No']) {
       return (
         <div className="flex items-center gap-2">
-          <span className="truncate">{row[col]}</span>
-          <span className="relative inline-flex">
+          <span className="whitespace-normal break-normal leading-snug">{row[col]}</span>
+          <span className="relative inline-flex shrink-0">
             <span
               className="peer inline-flex h-6 w-6 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-amber-300 transition-all hover:scale-105 hover:border-amber-400/50 hover:bg-amber-500/20 hover:text-amber-200"
             >
@@ -29,15 +39,7 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
     }
     return row[col] !== undefined ? row[col] : '—';
   };
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Reset to page 1 when data changes (e.g. search/filter)
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [data.length]);
-
+  // Removed internal pagination state
   if (isLoading) {
     return (
       <div className="card overflow-hidden">
@@ -64,14 +66,10 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
       </div>
     );
   }
-
-  const totalPages = Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
-
   return (
     <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="flex-1">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
@@ -87,7 +85,7 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.03]">
-            {paginatedData.map((row, rowIdx) => (
+            {data.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
                 className="hover:bg-amber-500/[0.03] transition-colors group"
@@ -117,10 +115,7 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Rows per page:</span>
           <select 
             value={itemsPerPage} 
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
             className="bg-slate-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-slate-300 focus:outline-none focus:border-amber-500/50 [color-scheme:dark]"
           >
             {[10, 20, 50, 100].map(sz => (
@@ -133,23 +128,23 @@ export const Table: React.FC<TableProps> = ({ columns, data, isLoading, actions 
 
         <div className="flex items-center gap-6">
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            Showing <span className="text-slate-300">{Math.min(startIndex + 1, data.length)}</span> - <span className="text-slate-300">{Math.min(startIndex + itemsPerPage, data.length)}</span> of <span className="text-slate-300">{data.length}</span>
+            Showing <span className="text-slate-300">{totalRecords > 0 ? startIndex + 1 : 0}</span> - <span className="text-slate-300">{Math.min(startIndex + data.length, totalRecords)}</span> of <span className="text-slate-300">{totalRecords}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="text-xs font-bold text-slate-400 px-2 min-w-[60px] text-center">
-              Page <span className="text-slate-200">{currentPage}</span> / {totalPages}
+              Page <span className="text-slate-200">{currentPage}</span> / {Math.max(totalPages, 1)}
             </div>
             <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages || totalPages === 0}
               className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 transition-all"
             >
               <ChevronRight className="w-4 h-4" />

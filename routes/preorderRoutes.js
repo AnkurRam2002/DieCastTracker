@@ -7,8 +7,18 @@ router.use(protect);
 
 router.get('/', async (req, res) => {
   try {
-    const preorders = await PreorderService.getAllPreorders(req.user._id);
-    const data = preorders.map(po => ({
+    const { page, limit, search, sellerFilter, statusFilter, sortOrder } = req.query;
+    
+    const result = await PreorderService.getAllPreorders(req.user._id, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 50,
+      search: search || '',
+      sellerFilter: sellerFilter || '',
+      statusFilter: statusFilter || '',
+      sortOrder: sortOrder || 'desc'
+    });
+
+    const data = result.data.map(po => ({
       "S.No": po.serial_number,
       "Seller": po.seller,
       "Models": po.models,
@@ -19,10 +29,13 @@ router.get('/', async (req, res) => {
       "Delivery Status": po.delivery_status,
       "Date Added": po.date_added
     }));
+
     res.json({
       success: true,
       data: data,
-      total_records: data.length
+      total_records: result.total,
+      page: result.page,
+      total_pages: result.totalPages
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

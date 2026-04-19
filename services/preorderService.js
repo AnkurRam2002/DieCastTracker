@@ -1,9 +1,48 @@
 const Preorder = require('../models/Preorder');
 
 class PreorderService {
-  static async getAllPreorders(userId) {
+  static async getAllPreorders(userId, options = {}) {
+    const {
+      page = 1,
+      limit = 50,
+      search = '',
+      sellerFilter = '',
+      statusFilter = '',
+      sortOrder = 'desc'
+    } = options;
+
     const query = userId ? { user: userId } : {};
-    return await Preorder.find(query).sort({ serial_number: 1 }).lean();
+
+    if (sellerFilter) {
+      query.seller = sellerFilter;
+    }
+    
+    if (statusFilter) {
+      query.delivery_status = statusFilter;
+    }
+
+    if (search) {
+      const rx = new RegExp(search, 'i');
+      query.$or = [
+        { seller: { $regex: rx } },
+        { models: { $regex: rx } }
+      ];
+    }
+
+    const sort = { serial_number: sortOrder === 'asc' ? 1 : -1 };
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      Preorder.find(query).sort(sort).skip(skip).limit(limit).lean(),
+      Preorder.countDocuments(query)
+    ]);
+
+    return {
+      data,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   static async addPreorder(seller, models, eta, totalPrice, poAmount, onArrivalAmount, deliveryStatus = "Pending", userId) {

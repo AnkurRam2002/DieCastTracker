@@ -10,8 +10,15 @@ export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'hotwheels' | 'others'>('hotwheels');
   
+  // Pagination & Backend Metadata
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // Filters
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [mainSeriesFilter, setMainSeriesFilter] = useState('');
   const [seriesFilter, setSeriesFilter] = useState('');
@@ -22,15 +29,39 @@ export const Dashboard: React.FC = () => {
   const [editingModel, setEditingModel] = useState<any>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset page when other filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, brandFilter, mainSeriesFilter, seriesFilter, sortOrder, itemsPerPage]);
+
   const loadData = async () => {
     setLoading(true);
     try {
       const [dataRes, statsRes] = await Promise.all([
-        dataService.getAll(),
+        dataService.getAll({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearch,
+          brandFilter,
+          mainSeriesFilter,
+          seriesFilter,
+          sortOrder,
+          tab: activeTab
+        }),
         dataService.getStats(),
       ]);
       if (dataRes.success) {
         setData(dataRes.data);
+        setTotalRecords(dataRes.total_records);
+        setTotalPages(dataRes.total_pages);
       }
       if (statsRes.success) setStats(statsRes.stats);
     } catch (err) {
@@ -42,7 +73,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [currentPage, itemsPerPage, debouncedSearch, brandFilter, mainSeriesFilter, seriesFilter, sortOrder, activeTab]);
 
   const handleDelete = async (serialNumber: number) => {
     if (!window.confirm(`Are you sure you want to delete model #${serialNumber}?`)) return;
@@ -83,46 +114,7 @@ export const Dashboard: React.FC = () => {
     return ['S.No', 'Model Name', 'Subseries'];
   }, [activeTab]);
 
-  const filtered = useMemo(() => {
-    let result = [...data];
-
-    // 1. Tab Filtering
-    if (activeTab === 'hotwheels') {
-      result = result.filter(row => row['Brand'] === 'Hot Wheels');
-    } else {
-      result = result.filter(row => row['Brand'] !== 'Hot Wheels');
-      if (brandFilter) {
-        result = result.filter(row => row['Brand'] === brandFilter);
-      }
-    }
-
-    // 2. Filter by Search
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(row =>
-        Object.values(row).some(v => String(v).toLowerCase().includes(q))
-      );
-    }
-
-    // 3. Filter by Series
-    if (mainSeriesFilter) {
-      result = result.filter(row => row['Series'] === mainSeriesFilter);
-    }
-
-    // 4. Filter by Subseries
-    if (seriesFilter) {
-      result = result.filter(row => row['Subseries'] === seriesFilter);
-    }
-
-    // 5. Sort
-    result.sort((a, b) => {
-      const valA = a['S.No'] || 0;
-      const valB = b['S.No'] || 0;
-      return sortOrder === 'asc' ? valA - valB : valB - valA;
-    });
-
-    return result;
-  }, [data, activeTab, brandFilter, search, mainSeriesFilter, seriesFilter, sortOrder]);
+  // Removed purely client-side filtering
 
   const totalModels = stats?.total_models ?? data.length;
 
@@ -247,7 +239,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="label-xs mb-1 text-slate-400">Current View</div>
               <div className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(52,211,153,0.2)]">
-                {filtered.length}
+                {totalRecords}
               </div>
               <div className="label-xs mt-2 font-bold text-slate-500 uppercase tracking-[0.2em]">Showing Matched Models</div>
             </div>
@@ -372,8 +364,14 @@ export const Dashboard: React.FC = () => {
       {/* ── Table ── */}
       <Table
         columns={displayColumns}
-        data={filtered}
+        data={data}
         isLoading={loading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
         actions={(row) => (
           <div className="flex justify-end gap-2">
             <button 

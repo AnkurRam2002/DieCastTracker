@@ -4,14 +4,81 @@ const Subseries = require('../models/Subseries');
 const Brand = require('../models/Brand');
 
 class ModelService {
-  static async getAllModels(userId) {
+  static async getAllModels(userId, options = {}) {
+    const {
+      page = 1,
+      limit = 50,
+      search = '',
+      brandFilter = '',
+      mainSeriesFilter = '',
+      seriesFilter = '', // This maps to subseries on frontend
+      sortOrder = 'asc',
+      tab = 'hotwheels'
+    } = options;
+
     const query = userId ? { user: userId } : {};
-    return await Model.find(query)
-      .populate('metadata.brand')
-      .populate('metadata.series')
-      .populate('metadata.subseries')
-      .sort({ serial_number: 1 })
-      .lean();
+
+    // Base Brand references
+    const hwBrand = await Brand.findOne({ name: 'Hot Wheels', ...query });
+
+    // 1. Exact Filters
+    if (tab === 'hotwheels') {
+      if (hwBrand) query['metadata.brand'] = hwBrand._id;
+    } else if (tab === 'others') {
+      if (hwBrand) query['metadata.brand'] = { $ne: hwBrand._id };
+      if (brandFilter) {
+        const tgtBrand = await Brand.findOne({ name: brandFilter, ...query });
+        if (tgtBrand) query['metadata.brand'] = tgtBrand._id;
+      }
+    }
+
+    if (mainSeriesFilter) {
+      const tgtSeries = await Series.findOne({ name: mainSeriesFilter, ...query });
+      if (tgtSeries) query['metadata.series'] = tgtSeries._id;
+    }
+
+    if (seriesFilter) {
+      const tgtSub = await Subseries.findOne({ name: seriesFilter, ...query });
+      if (tgtSub) query['metadata.subseries'] = tgtSub._id;
+    }
+
+    // 2. Search Logic
+    if (search) {
+      const rx = new RegExp(search, 'i');
+      const [b, s, sub] = await Promise.all([
+        Brand.find({ name: rx, ...query }, '_id').lean(),
+        Series.find({ name: rx, ...query }, '_id').lean(),
+        Subseries.find({ name: rx, ...query }, '_id').lean()
+      ]);
+      const orConditions = [{ model_name: { $regex: rx } }];
+      if (b.length > 0) orConditions.push({ 'metadata.brand': { $in: b.map(x => x._id) } });
+      if (s.length > 0) orConditions.push({ 'metadata.series': { $in: s.map(x => x._id) } });
+      if (sub.length > 0) orConditions.push({ 'metadata.subseries': { $in: sub.map(x => x._id) } });
+      query.$or = orConditions;
+    }
+
+    // 3. Execution
+    const sort = { serial_number: sortOrder === 'desc' ? -1 : 1 };
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      Model.find(query)
+        .populate('metadata.brand')
+        .populate('metadata.series')
+        .populate('metadata.subseries')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Model.countDocuments(query)
+    ]);
+
+    return {
+      data,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "", userId) {

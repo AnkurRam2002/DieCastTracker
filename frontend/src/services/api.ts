@@ -14,7 +14,15 @@ api.interceptors.request.use((config) => {
 });
 
 export const dataService = {
-  getAll: () => api.get('/api/models/data').then(res => res.data),
+  getAll: (params: any = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).reduce((acc, [k, v]) => {
+        if (v !== undefined && v !== null && v !== '') acc[k] = String(v);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    return api.get(`/api/models/data?${qs}`).then(res => res.data);
+  },
   getStats: () => api.get('/api/models/stats').then(res => res.data),
   search: (query: string) => api.get(`/api/models/search?q=${query}`).then(res => res.data),
   addModel: (data: any) => api.post('/api/models/add', data).then(res => res.data),
@@ -41,7 +49,15 @@ export const seriesService = {
 };
 
 export const preorderService = {
-  getAll: () => api.get('/api/preorders').then(res => res.data),
+  getAll: (params: any = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).reduce((acc, [k, v]) => {
+        if (v !== undefined && v !== null && v !== '') acc[k] = String(v);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    return api.get(`/api/preorders?${qs}`).then(res => res.data);
+  },
   getStats: () => api.get('/api/preorders/statistics').then(res => res.data),
   add: (data: any) => api.post('/api/preorders', data).then(res => res.data),
   update: (serial_number: number, updates: any) => api.put(`/api/preorders/${serial_number}`, updates).then(res => res.data),

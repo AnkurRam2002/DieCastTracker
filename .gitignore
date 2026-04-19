@@ -25,6 +25,7 @@ build/
 *.swp
 *.swo
 .DS_Store
+docs/
 Thumbs.db
 
 # Temporary & Scratch

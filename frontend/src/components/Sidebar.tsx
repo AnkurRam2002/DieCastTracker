@@ -14,6 +14,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',   path: '/',          section: null },
@@ -27,6 +28,7 @@ const navItems = [
 
 export const Sidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { logout } = useAuth();
 
   const inner = (
     <div className="flex flex-col h-full relative z-10">
@@ -84,6 +86,15 @@ export const Sidebar: React.FC = () => {
           );
         })}
       </nav>
+
+      <div className="p-4 mt-auto border-t border-white/5">
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-red-500/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        >
+          Logout
+        </button>
+      </div>
 
     </div>
   );

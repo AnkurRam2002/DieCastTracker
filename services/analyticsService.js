@@ -2,12 +2,14 @@ const Model = require('../models/Model');
 const Subseries = require('../models/Subseries');
 
 class AnalyticsService {
-  static async getCollectionIntelligence() {
+  static async getCollectionIntelligence(userId) {
+    const query = userId ? { user: userId } : {};
+
     // 1. Total Models
-    const totalModels = await Model.countDocuments();
+    const totalModels = await Model.countDocuments(query);
 
     // 2. Main Series Breakdown
-    const models = await Model.find()
+    const models = await Model.find(query)
       .populate('metadata.series')
       .populate('metadata.subseries')
       .lean();
@@ -49,7 +51,7 @@ class AnalyticsService {
     };
 
     // 5. Recent Additions
-    const recentModels = await Model.find()
+    const recentModels = await Model.find(query)
       .populate('metadata.series')
       .populate('metadata.subseries')
       .sort({ serial_number: -1 })

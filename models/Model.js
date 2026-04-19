@@ -9,6 +9,7 @@ const modelSchema = new mongoose.Schema({
     subseries: { type: mongoose.Schema.Types.ObjectId, ref: 'Subseries', required: false },
     model_no: { type: String, required: false }
   },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true },
   date_added: { type: Date, default: Date.now }
 }, { timestamps: true });
 

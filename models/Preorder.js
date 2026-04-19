@@ -9,7 +9,8 @@ const preorderSchema = new mongoose.Schema({
   po_amount: { type: Number },
   on_arrival_amount: { type: Number },
   delivery_status: { type: String, default: "Pending" },
-  date_added: { type: String } // Stored as YYYY-MM-DD for compatibility
+  date_added: { type: String }, // Stored as YYYY-MM-DD for compatibility
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Preorder', preorderSchema);

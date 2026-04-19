@@ -3,10 +3,13 @@ const router = express.Router();
 const ModelService = require('../services/modelService');
 const SeriesService = require('../services/seriesService');
 const Model = require('../models/Model');
+const { protect } = require('../middleware/auth');
+
+router.use(protect);
 
 router.get('/data', async (req, res) => {
   try {
-    const modelsList = await ModelService.getAllModels();
+    const modelsList = await ModelService.getAllModels(req.user._id);
     const data = modelsList.map(m => ({
       "S.No": m.serial_number,
       "Model Name": m.model_name,
@@ -30,7 +33,7 @@ router.get('/data', async (req, res) => {
 router.post('/add', async (req, res) => {
   try {
     const { model_name, series, subseries, brand, model_no } = req.body;
-    const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no);
+    const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no, req.user._id);
     res.json({
       success: true,
       message: `Successfully added '${model_name}' to the collection!`,
@@ -44,7 +47,7 @@ router.post('/add', async (req, res) => {
 router.put('/update', async (req, res) => {
   try {
     const { serial_number, updates } = req.body;
-    await ModelService.updateModel(serial_number, updates);
+    await ModelService.updateModel(serial_number, updates, req.user._id);
     res.json({ success: true, message: `Successfully updated model with serial number ${serial_number}!` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -54,7 +57,7 @@ router.put('/update', async (req, res) => {
 router.delete('/delete', async (req, res) => {
   try {
     const { serial_number } = req.body;
-    await ModelService.deleteModel(serial_number);
+    await ModelService.deleteModel(serial_number, req.user._id);
     res.json({ success: true, message: `Successfully deleted model with serial number ${serial_number}!` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -63,8 +66,8 @@ router.delete('/delete', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const totalModels = await Model.countDocuments();
-    const modelsList = await Model.find()
+    const totalModels = await Model.countDocuments({ user: req.user._id });
+    const modelsList = await Model.find({ user: req.user._id })
       .populate('metadata.brand')
       .populate('metadata.series')
       .populate('metadata.subseries')
@@ -109,7 +112,7 @@ router.get('/search', async (req, res) => {
     }
 
     const searchQuery = q.toLowerCase();
-    const allModels = await Model.find()
+    const allModels = await Model.find({ user: req.user._id })
       .populate('metadata.brand')
       .populate('metadata.series')
       .populate('metadata.subseries')
@@ -148,7 +151,9 @@ router.get('/search', async (req, res) => {
 
 router.get('/dropdown-options', async (req, res) => {
   try {
-    const config = await SeriesService.getSeriesConfig();
+    // Dropdown options could be user specific, or global.
+    // Assuming user specific based on req.user._id
+    const config = await SeriesService.getSeriesConfig(req.user._id);
     res.json({
       success: true,
       series: config.series_options

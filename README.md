@@ -1,112 +1,108 @@
-# DieCastTracker - Hot Wheels Collection Management System (Relational)
+# DieCastTracker
 
-A modern, relational collection management system for Hot Wheels collectors, featuring dual-storage (Excel + PostgreSQL), professional categorization, and a sleek web interface.
+A modern, full-stack web application designed for Hot Wheels and die-cast car collectors. DieCastTracker helps you organize your collection, track pre-orders, manage categories, and visualize your collection statistics with ease.
 
-## Table of Contents
+## 🚀 Tech Stack
 
-- [Features](#features)
-- [Relational Architecture](#relational-architecture)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Deployment (Render)](#deployment)
-- [Web Interface](#web-interface)
-- [Data Management](#data-management)
-- [Statistics & Analytics](#statistics--analytics)
+### Frontend
+- **Framework**: React 19 / Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4, clsx, tailwind-merge
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Data Visualization**: Chart.js / react-chartjs-2
+- **Routing**: React Router v7
 
-## Features
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB (Mongoose ORM)
+- **Authentication**: JWT (JSON Web Tokens) & bcryptjs
+- **Logging**: Morgan
 
-### Core Functionality
-- **Dual Storage**: Saves data to both Local Excel and PostgreSQL Database simultaniously.
-- **Relational Models**: Professional schema (Series ➔ Subseries ➔ Models).
-- **Add/Update/Delete**: Full CRUD operations with automatic backup protection.
-- **Search & Filter**: Find models by name, category, or series using database joins.
-- **Statistics Dashboard**: Real-time analytics of your collection.
-- **Preorders Tracking**: Complete management of orders with ETA and payment tracking.
-- **Automatic Backups**: Keeps your Excel data safe with up to 5 rolling backups.
+## ✨ Features
 
-### User Experience
-- **Modern Web Interface**: Responsive design with a dynamic sidebar.
-- **Render Ready**: One-click deployment using the included blueprint.
-- **Environment Driven**: Manage secrets and URLs using `.env` files.
+- **Relational Categorization**: Organize your collection by Brands, Series, and Subseries using structured relational models.
+- **Detailed Model Tracking**: Keep track of model metadata, numbers, and custom details.
+- **Pre-order Management**: Track pending orders, payment statuses, and estimated times of arrival.
+- **Analytics Dashboard**: Interactive charts and statistics to visualize the growth and distribution of your collection.
+- **User Scoping**: Multi-tenant data handling with user-scoped uniqueness constraints ensuring secure, private collections.
+- **Modern UI/UX**: Sleek, responsive, and animated user interface built with Tailwind and Framer Motion.
 
-## Relational Architecture
-
-The system uses a 3-tier hierarchy to keep your collection organized:
-
-1. **Series**: Main categories (e.g., Mainlines, Premiums).
-2. **Subseries**: Specific lines within a series (e.g., Boulevard, ZAMAC).
-3. **Car (Model)**: Individual cars linked to their specific subseries.
-
-```mermaid
-erDiagram
-    SERIES ||--o{ SUBSERIES : "has many"
-    SUBSERIES ||--o{ CAR : "contains"
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 DieCastTracker/
-├── pages/                  # Web interface pages & logic
-├── static/                 # CSS and JS assets
-├── utils/                  # Database models and backup utilities
-├── data/                   # Local Excel storage and backups
-├── scripts/                # Data sync and migration scripts
-├── app.py                  # Main FastAPI Application
-├── render.yaml             # Deployment blueprint
-├── .env                    # Environment configuration
-└── README.md               # This file
+├── frontend/               # React Vite Frontend App
+│   ├── src/                # Components, Pages, Context, etc.
+│   └── package.json        # Frontend Dependencies
+├── models/                 # Mongoose Database Models (Brands, Series, etc.)
+├── routes/                 # Express API Routes
+├── services/               # Business Logic and Database Interactions
+├── middleware/             # Custom Express Middleware (Auth, Logging)
+├── server.js               # Express Application Entry Point
+├── package.json            # Backend Dependencies
+└── .env                    # Environment Configuration
 ```
 
-## Installation
+## 🛠️ Installation & Setup
 
-1. **Clone the repository**
-2. **Install dependencies**:
+### Prerequisites
+- Node.js (v20+ recommended)
+- MongoDB instance (local or MongoDB Atlas)
+
+### 1. Backend Setup
+
+1. **Clone the repository:**
    ```bash
-   pip install -r requirements.txt
+   git clone https://github.com/AnkurRam2002/DieCastTracker.git
+   cd DieCastTracker
    ```
-3. **Configure `.env`**:
-   Copy `.env.example` to `.env` and set your `DATABASE_URL`.
 
-## Deployment (Render)
+2. **Install backend dependencies:**
+   ```bash
+   npm install
+   ```
 
-1. **Push** your changes to GitHub.
-2. Go to **Render Dashboard** -> **New +** -> **Blueprint**.
-3. Select this repository.
-4. Render will automatically set up the Postgres SQL database and start the web service.
+3. **Environment Configuration:**
+   Copy the example environment file and configure it with your database and standard keys.
+   ```bash
+   cp .env.example .env
+   ```
+   *Make sure to set your MongoDB Connection URI (`MONGO_URI` or `DATABASE_URL`) and JWT secret.*
 
-## Web Interface
+4. **Start the backend server:**
+   ```bash
+   # Development mode with nodemon
+   npm run dev
+   # OR production mode
+   npm start
+   ```
 
-Start the local server:
-```bash
-python app.py
-```
-Visit `http://localhost:8000`
+### 2. Frontend Setup
 
-### Available Pages
-- **Home**: Collection listing with search and edit/delete.
-- **Add Model**: Unified dropdown selection for relational categories.
-- **Analytics**: Deep insights into your collection patterns.
-- **Preorders**: Order tracking with payment status indicators.
-- **Series Management**: Manage the category hierarchy.
+1. **Navigate to the frontend directory:**
+   ```bash
+   cd frontend
+   ```
 
-## Data Management
+2. **Install frontend dependencies:**
+   ```bash
+   npm install
+   ```
 
-### Automatic Backup System
-The system automatically creates backups before any modification to the Excel files:
-- **Location**: `data/backups/`
-- **Retention**: Maximum 5 backups per file.
+3. **Start the frontend development server:**
+   ```bash
+   npm run dev
+   ```
 
-### Data Sync
-When deploying for the first time, use the sync script to move your local Excel data to the cloud:
-```bash
-python scripts/sync_to_postgres.py
-```
+4. **Open your browser:**
+   Navigate to `http://localhost:5173` to view the application.
 
----
+## 🤝 Contributing
 
-## Happy Collecting!
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page and submit pull requests.
 
-DieCastTracker helps you organize your Hot Wheels collection with professional-grade tools. From relational tracking to cloud deployment, it's built for collectors who want their data safe and accessible everywhere.
+## 📝 License
 
-*Made for Hot Wheels collectors worldwide*
+This project is created for die-cast collectors worldwide.

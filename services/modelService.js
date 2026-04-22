@@ -61,17 +61,58 @@ class ModelService {
     const sort = { serial_number: sortOrder === 'desc' ? -1 : 1 };
     const skip = (page - 1) * limit;
 
-    const [data, total] = await Promise.all([
-      Model.find(query)
-        .populate('metadata.brand')
-        .populate('metadata.series')
-        .populate('metadata.subseries')
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Model.countDocuments(query)
-    ]);
+    let data;
+    let total;
+
+    if (tab === 'others') {
+      const pipeline = [
+        { $match: query },
+        { $lookup: { from: 'brands', localField: 'metadata.brand', foreignField: '_id', as: 'brandDoc' } },
+        { $unwind: { path: '$brandDoc', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'series', localField: 'metadata.series', foreignField: '_id', as: 'seriesDoc' } },
+        { $unwind: { path: '$seriesDoc', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'subseries', localField: 'metadata.subseries', foreignField: '_id', as: 'subseriesDoc' } },
+        { $unwind: { path: '$subseriesDoc', preserveNullAndEmptyArrays: true } },
+        { $sort: { 
+            'brandDoc.name': 1, 
+            'seriesDoc.name': 1, 
+            'subseriesDoc.name': 1, 
+            'serial_number': sortOrder === 'desc' ? -1 : 1 
+          } 
+        },
+        {
+          $facet: {
+            metadata: [{ $count: "total" }],
+            paginatedData: [
+              { $skip: skip },
+              { $limit: limit },
+              { $addFields: {
+                  'metadata.brand': '$brandDoc',
+                  'metadata.series': '$seriesDoc',
+                  'metadata.subseries': '$subseriesDoc'
+              }},
+              { $project: { brandDoc: 0, seriesDoc: 0, subseriesDoc: 0 } }
+            ]
+          }
+        }
+      ];
+
+      const result = await Model.aggregate(pipeline);
+      data = result[0].paginatedData;
+      total = result[0].metadata.length > 0 ? result[0].metadata[0].total : 0;
+    } else {
+      [data, total] = await Promise.all([
+        Model.find(query)
+          .populate('metadata.brand')
+          .populate('metadata.series')
+          .populate('metadata.subseries')
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Model.countDocuments(query)
+      ]);
+    }
 
     return {
       data,

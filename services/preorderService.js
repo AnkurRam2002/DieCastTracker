@@ -143,6 +143,7 @@ class PreorderService {
     const statusBreakdown = {};
     let activePaid = 0;
     let activeRemaining = 0;
+    let totalPaid = 0;
     const upcomingArrivals = [];
 
     const today = new Date();
@@ -152,14 +153,24 @@ class PreorderService {
 
     for (const po of preorders) {
       const status = po.delivery_status || "Pending";
+      const statusLower = status.toLowerCase();
       statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
 
-      if (status.toLowerCase() !== "delivered") {
-        activePaid += (po.po_amount || 0);
-        if (["paid", "shipped"].includes(status.toLowerCase())) {
-          activePaid += (po.on_arrival_amount || 0);
-        } else if (status.toLowerCase() === "pending") {
-          activeRemaining += (po.on_arrival_amount || 0);
+      if (statusLower === "delivered") {
+        totalPaid += (po.total_price || 0);
+      } else {
+        // Active (non-delivered) items
+        const poAmt = (po.po_amount || 0);
+        const arrivalAmt = (po.on_arrival_amount || 0);
+
+        activePaid += poAmt;
+        totalPaid += poAmt;
+
+        if (["paid", "shipped"].includes(statusLower)) {
+          activePaid += arrivalAmt;
+          totalPaid += arrivalAmt;
+        } else {
+          activeRemaining += arrivalAmt;
         }
       }
 
@@ -184,6 +195,7 @@ class PreorderService {
       total_on_arrival: Number(totalOnArrival.toFixed(2)),
       active_paid: Number(activePaid.toFixed(2)),
       active_remaining: Number(activeRemaining.toFixed(2)),
+      total_paid: Number(totalPaid.toFixed(2)),
       status_breakdown: statusBreakdown,
       upcoming_arrivals: upcomingArrivals.sort((a, b) => a.eta.localeCompare(b.eta))
     };

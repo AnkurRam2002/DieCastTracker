@@ -91,7 +91,7 @@ export const Preorders: React.FC = () => {
       totalCommited: stats.total_value,
       totalPO: stats.total_po_amount,
       totalArrival: stats.total_on_arrival,
-      paymentDone: stats.active_paid,
+      paymentDone: stats.total_paid || 0,
       remaining: stats.active_remaining
     };
   }, [stats]);
@@ -104,9 +104,7 @@ export const Preorders: React.FC = () => {
     try {
       const res = await preorderService.update(serialNumber, { delivery_status: nextStatus });
       if (res.success) {
-        setPreorders(prev => prev.map(p => 
-          p['S.No'] === serialNumber ? { ...p, 'Delivery Status': nextStatus } : p
-        ));
+        fetchPreorders();
       }
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -128,7 +126,7 @@ export const Preorders: React.FC = () => {
     try {
       const res = await preorderService.delete(serialNumber);
       if (res.success) {
-        setPreorders(prev => prev.filter(p => p['S.No'] !== serialNumber));
+        fetchPreorders();
       } else {
         alert(res.error || 'Failed to delete preorder.');
       }

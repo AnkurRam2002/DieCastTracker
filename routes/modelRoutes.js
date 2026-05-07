@@ -23,11 +23,11 @@ router.get('/data', async (req, res) => {
 
     const data = result.data.map(m => ({
       "S.No": m.serial_number,
-      "Model Name": m.model_name,
+      "Item Name": m.model_name,
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
       "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
-      "Model No": m.metadata.model_no || ""
+      "Item No": m.metadata.model_no || ""
     }));
 
     res.json({
@@ -144,11 +144,11 @@ router.get('/search', async (req, res) => {
       return modelMatch || seriesMatch || mainSeriesMatch || brandMatch;
     }).map(m => ({
       "S.No": m.serial_number,
-      "Model Name": m.model_name,
+      "Item Name": m.model_name,
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
       "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
-      "Model No": m.metadata.model_no || ""
+      "Item No": m.metadata.model_no || ""
     }));
 
     res.json({

@@ -6,7 +6,7 @@ import {
   BarChart3, 
   Layers,
   PlusCircle, 
-  Car,
+  Package,
   ChevronRight,
   Menu,
   X,
@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',   path: '/',          section: null },
-  { icon: PlusCircle,      label: 'Add Model',   path: '/add',       section: null },
+  { icon: PlusCircle,      label: 'Add Item',    path: '/add',       section: null },
   { icon: ShoppingCart,    label: 'Preorders',   path: '/preorders', section: 'Tracking' },
   { icon: BarChart3,       label: 'Analytics',   path: '/analytics', section: null },
   { icon: Tags,            label: 'Brands',      path: '/manage/brands',    section: 'Management' },
@@ -36,11 +36,11 @@ export const Sidebar: React.FC = () => {
       <div className="p-6 border-b border-white/5">
         <NavLink to="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-lg shadow-amber-500/10 group-hover:scale-105 transition-transform">
-            <Car className="w-5 h-5 text-amber-400" />
+            <Package className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <div className="text-white font-black tracking-tight text-base leading-tight">Model</div>
-            <div className="text-amber-500 text-[9px] font-black uppercase tracking-[0.25em] leading-tight">Tracker Pro</div>
+            <div className="text-white font-black tracking-tight text-base leading-tight">Collector's</div>
+            <div className="text-amber-500 text-[9px] font-black uppercase tracking-[0.25em] leading-tight">Registry Pro</div>
           </div>
         </NavLink>
       </div>

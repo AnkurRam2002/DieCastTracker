@@ -1,14 +1,19 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { dataService } from '../services/api';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { dataService, authService, brandService, seriesService } from '../services/api';
 import { Table } from '../components/Table';
 import { EditModelModal } from '../components/EditModelModal';
-import { Search, SlidersHorizontal, Car, TrendingUp, Hash, Edit2, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, Package, TrendingUp, Hash, Edit2, Trash2, CheckCircle, AlertCircle, Settings } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'hotwheels' | 'others'>('hotwheels');
+  const [activeTab, setActiveTab] = useState<'primary' | 'secondary' | 'others'>('primary');
+  const [user, setUser] = useState<any>(null);
+  const [allBrands, setAllBrands] = useState<any[]>([]);
+  const [allSeries, setAllSeries] = useState<any[]>([]);
+  const [allSubseries, setAllSubseries] = useState<any[]>([]);
+  const [showBrandPicker, setShowBrandPicker] = useState(false);
   
   // Pagination & Backend Metadata
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,6 +33,22 @@ export const Dashboard: React.FC = () => {
   // Edit/Delete State
   const [editingModel, setEditingModel] = useState<any>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowBrandPicker(false);
+      }
+    };
+    if (showBrandPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBrandPicker]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -36,6 +57,34 @@ export const Dashboard: React.FC = () => {
     }, 400);
     return () => clearTimeout(handler);
   }, [search]);
+
+  // Load user profile and brands
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [uRes, bRes, sRes, subRes] = await Promise.all([
+          authService.profile(),
+          brandService.getAll(),
+          seriesService.getAll(),
+          seriesService.getAllSubseries()
+        ]);
+        if (uRes.success) {
+          setUser(uRes.user);
+          if (!uRes.user.primary_brand && !uRes.user.secondary_brand) {
+            setActiveTab('others');
+          } else if (!uRes.user.primary_brand && uRes.user.secondary_brand) {
+            setActiveTab('secondary');
+          }
+        }
+        if (bRes.success) setAllBrands(bRes.brands);
+        if (sRes.success) setAllSeries(sRes.series);
+        if (subRes.success) setAllSubseries(subRes.subseries);
+      } catch (err) {
+        console.error("Failed to load user info", err);
+      }
+    };
+    init();
+  }, []);
 
   // Reset page when other filters change
   useEffect(() => {
@@ -109,61 +158,60 @@ export const Dashboard: React.FC = () => {
 
   const displayColumns = useMemo(() => {
     if (activeTab === 'others') {
-      return ['S.No', 'Model Name', 'Brand', 'Series', 'Subseries'];
+      return ['S.No', 'Item Name', 'Brand', 'Series', 'Subseries'];
     }
-    return ['S.No', 'Model Name', 'Subseries'];
+    return ['S.No', 'Item Name', 'Subseries'];
   }, [activeTab]);
 
   // Removed purely client-side filtering
 
   const totalModels = stats?.total_models ?? data.length;
 
-  // Extract unique filter options from stats if available, otherwise from data
+  // Extract unique filter options
   const mainSeriesOptions = useMemo(() => {
-    if (stats?.column_info?.['Series']?.top_values) {
-      return Object.keys(stats.column_info['Series'].top_values).sort();
+    let relevantSeries = allSeries;
+    
+    if (activeTab === 'primary') {
+      relevantSeries = allSeries.filter(s => s.brand?.name === user?.primary_brand);
+    } else if (activeTab === 'secondary') {
+      relevantSeries = allSeries.filter(s => s.brand?.name === user?.secondary_brand);
+    } else if (activeTab === 'others' && brandFilter) {
+      relevantSeries = allSeries.filter(s => s.brand?.name === brandFilter);
     }
-    return Array.from(new Set(data.map(r => r['Series'] || 'Others'))).sort();
-  }, [data, stats]);
+
+    return Array.from(new Set(relevantSeries.map(s => s.name))).sort();
+  }, [allSeries, activeTab, user, brandFilter]);
 
   const brandOptions = useMemo(() => {
-    const others = data.filter(r => r['Brand'] !== 'Hot Wheels');
-    return Array.from(new Set(others.map(r => r['Brand']))).filter(Boolean).sort();
-  }, [data]);
+    // Return all brands that are NOT the primary or secondary ones
+    return allBrands
+      .filter(b => b.name !== user?.primary_brand && b.name !== user?.secondary_brand)
+      .map(b => b.name)
+      .sort();
+  }, [allBrands, user]);
 
   const seriesOptions = useMemo(() => {
-    let relevantData = data;
-    if (activeTab === 'hotwheels') {
-      relevantData = data.filter(r => r['Brand'] === 'Hot Wheels');
-    } else {
-      relevantData = data.filter(r => r['Brand'] !== 'Hot Wheels');
-      if (brandFilter) {
-        relevantData = relevantData.filter(r => r['Brand'] === brandFilter);
-      }
+    let relevantSubseries = allSubseries;
+    
+    // 1. Filter by current brand tab
+    if (activeTab === 'primary') {
+      relevantSubseries = allSubseries.filter(sub => sub.series?.brand?.name === user?.primary_brand);
+    } else if (activeTab === 'secondary') {
+      relevantSubseries = allSubseries.filter(sub => sub.series?.brand?.name === user?.secondary_brand);
+    } else if (activeTab === 'others' && brandFilter) {
+      relevantSubseries = allSubseries.filter(sub => sub.series?.brand?.name === brandFilter);
     }
     
+    // 2. Filter by selected series (STRICT)
     if (mainSeriesFilter) {
-      relevantData = relevantData.filter(r => r['Series'] === mainSeriesFilter);
+      relevantSubseries = relevantSubseries.filter(sub => sub.series?.name === mainSeriesFilter);
+    } else {
+      // If no series selected, return empty (user requested selected series subseries only)
+      return [];
     }
 
-    // Group subseries by their main series to enable hierarchical sorting
-    const subseriesInfo: Record<string, string> = {};
-    data.forEach(r => {
-      if (r['Subseries'] && r['Series']) {
-        subseriesInfo[r['Subseries']] = r['Series'];
-      }
-    });
-
-    const uniqueSubs = Array.from(new Set(relevantData.map(r => r['Subseries'] || ''))).filter(Boolean);
-    
-    return uniqueSubs.sort((a, b) => {
-      const parentA = subseriesInfo[a] || 'Others';
-      const parentB = subseriesInfo[b] || 'Others';
-      
-      if (parentA !== parentB) return parentA.localeCompare(parentB);
-      return a.localeCompare(b);
-    });
-  }, [data, activeTab, brandFilter, mainSeriesFilter]);
+    return Array.from(new Set(relevantSubseries.map(sub => sub.name))).sort();
+  }, [allSubseries, activeTab, user, brandFilter, mainSeriesFilter]);
 
   return (
     <div className="space-y-8 pb-20">
@@ -188,33 +236,132 @@ export const Dashboard: React.FC = () => {
             Live Collection
           </div>
           <h1 className="text-4xl font-black tracking-tight text-white">
-            Die-Cast <span className="text-amber-400">Registry</span>
+            Collector <span className="text-amber-400">Registry</span>
           </h1>
-          <p className="text-slate-500 mt-2 font-medium">Your complete model inventory in one place.</p>
+          <p className="text-slate-500 mt-2 font-medium">Your complete collection inventory in one place.</p>
         </div>
 
         {/* ── Tab Switcher ── */}
-        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
-          <button
-            onClick={() => setActiveTab('hotwheels')}
-            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-              activeTab === 'hotwheels' 
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Hot Wheels
-          </button>
-          <button
-            onClick={() => setActiveTab('others')}
-            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-              activeTab === 'others' 
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Other Brands
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
+            {user?.primary_brand && (
+              <button
+                onClick={() => setActiveTab('primary')}
+                className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'primary' 
+                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {user.primary_brand}
+              </button>
+            )}
+            {user?.secondary_brand && (
+              <button
+                onClick={() => setActiveTab('secondary')}
+                className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'secondary' 
+                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {user.secondary_brand}
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('others')}
+              className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                activeTab === 'others' 
+                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {(!user?.primary_brand && !user?.secondary_brand) ? 'Collection' : 'Others'}
+            </button>
+          </div>
+
+          <div className="relative" ref={pickerRef}>
+            <button 
+              onClick={() => setShowBrandPicker(!showBrandPicker)}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+              title="Manage Tabs"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {showBrandPicker && (
+              <div className="absolute right-0 mt-3 w-72 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 block">Tab 1 Brand</label>
+                    <select 
+                      value={user?.primary_brand || ''}
+                      onChange={async (e) => {
+                        const val = e.target.value === "" ? null : e.target.value;
+                        try {
+                          const res = await authService.updatePreferences({ primary_brand: val });
+                          if (res.success) { 
+                            setUser(res.user); 
+                            if (!val && activeTab === 'primary') setActiveTab('others');
+                            loadData(); 
+                          } else {
+                            setFeedback({ type: 'error', msg: res.error || 'Failed to update tab' });
+                          }
+                        } catch (err: any) {
+                          setFeedback({ type: 'error', msg: err?.response?.data?.error || 'Error updating tab' });
+                        }
+                      }}
+                      className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:border-amber-500/50"
+                    >
+                      <option value="">None (Disabled)</option>
+                      {allBrands.map(b => (
+                        <option key={b._id} value={b.name} disabled={b.name === user?.secondary_brand}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 block">Tab 2 Brand</label>
+                    <select 
+                      value={user?.secondary_brand || ''}
+                      onChange={async (e) => {
+                        const val = e.target.value === "" ? null : e.target.value;
+                        try {
+                          const res = await authService.updatePreferences({ secondary_brand: val });
+                          if (res.success) { 
+                            setUser(res.user); 
+                            if (!val && activeTab === 'secondary') setActiveTab('others');
+                            loadData(); 
+                          } else {
+                            setFeedback({ type: 'error', msg: res.error || 'Failed to update tab' });
+                          }
+                        } catch (err: any) {
+                          setFeedback({ type: 'error', msg: err?.response?.data?.error || 'Error updating tab' });
+                        }
+                      }}
+                      className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:border-amber-500/50"
+                    >
+                      <option value="">None (Disabled)</option>
+                      {allBrands.map(b => (
+                        <option key={b._id} value={b.name} disabled={b.name === user?.primary_brand}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setShowBrandPicker(false)}
+                    className="w-full btn-primary py-2 text-[10px] justify-center"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -224,12 +371,12 @@ export const Dashboard: React.FC = () => {
         <div className="card card-accent p-6 group">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-amber-500/5">
-              <Car className="w-5 h-5 text-amber-400" />
+              <Package className="w-5 h-5 text-amber-400" />
             </div>
             <div className="label-xs text-slate-500">Total</div>
           </div>
           <div className="text-2xl font-black text-amber-400">{totalModels}</div>
-          <div className="label-xs mt-1 text-slate-600">Registered Models</div>
+          <div className="label-xs mt-1 text-slate-600">Registered Items</div>
         </div>
 
         {/* Showing Card (Bigger) */}
@@ -241,7 +388,7 @@ export const Dashboard: React.FC = () => {
               <div className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(52,211,153,0.2)]">
                 {totalRecords}
               </div>
-              <div className="label-xs mt-2 font-bold text-slate-500 uppercase tracking-[0.2em]">Showing Matched Models</div>
+              <div className="label-xs mt-2 font-bold text-slate-500 uppercase tracking-[0.2em]">Showing Matched Items</div>
             </div>
             <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/5">
               <TrendingUp className="w-7 h-7 text-emerald-400" />
@@ -270,7 +417,7 @@ export const Dashboard: React.FC = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search models, series…"
+              placeholder="Search items, series…"
               className="input pl-11"
             />
           </div>
@@ -322,9 +469,13 @@ export const Dashboard: React.FC = () => {
                   }}
                 >
                   <option value="">All Series</option>
-                  {mainSeriesOptions.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
+                  {mainSeriesOptions.length > 0 ? (
+                    mainSeriesOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))
+                  ) : (
+                    <option value="" disabled>None</option>
+                  )}
                 </select>
               </div>
 
@@ -335,10 +486,14 @@ export const Dashboard: React.FC = () => {
                   value={seriesFilter}
                   onChange={e => setSeriesFilter(e.target.value)}
                 >
-                  <option value="">All Subseries</option>
-                  {seriesOptions.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
+                  <option value="">{mainSeriesFilter ? 'All Subseries' : 'Select Series First'}</option>
+                  {seriesOptions.length > 0 ? (
+                    seriesOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))
+                  ) : (
+                    mainSeriesFilter && <option value="" disabled>None</option>
+                  )}
                 </select>
               </div>
 

@@ -1,5 +1,5 @@
 {
-  "name": "diecast-tracker",
+  "name": "collectors-registry",
   "version": "1.0.0",
   "description": "Hot Wheels Die-Cast Collection Management System (Relational Web App)",
   "main": "server.js",

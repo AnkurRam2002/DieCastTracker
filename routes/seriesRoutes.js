@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const SeriesService = require('../services/seriesService');
+const { protect } = require('../middleware/auth');
+
+router.use(protect);
 
 router.get('/', async (req, res) => {
   try {
-    const config = await SeriesService.getSeriesConfig();
+    const config = await SeriesService.getSeriesConfig(req.user._id);
     res.json({
       success: true,
       series_options: config.series_options,
@@ -17,7 +20,7 @@ router.get('/', async (req, res) => {
 
 router.get('/all', async (req, res) => {
   try {
-    const series = await SeriesService.getAllSeries();
+    const series = await SeriesService.getAllSeries(req.user._id);
     res.json({ success: true, series });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -26,7 +29,7 @@ router.get('/all', async (req, res) => {
 
 router.get('/subseries/all', async (req, res) => {
   try {
-    const subseries = await SeriesService.getAllSubseries();
+    const subseries = await SeriesService.getAllSubseries(req.user._id);
     res.json({ success: true, subseries });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

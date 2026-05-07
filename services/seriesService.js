@@ -4,8 +4,9 @@ const Brand = require('../models/Brand');
 
 class SeriesService {
   // Brand Management
-  static async getAllBrands() {
-    return await Brand.find().sort({ name: 1 }).lean();
+  static async getAllBrands(userId) {
+    const query = userId ? { user: userId } : {};
+    return await Brand.find(query).sort({ name: 1 }).lean();
   }
 
   static async addBrand(name) {
@@ -21,9 +22,10 @@ class SeriesService {
   }
 
   // Series Management
-  static async getSeriesConfig() {
-    const brands = await Brand.find().lean();
-    const seriesList = await Series.find().populate('brand').lean();
+  static async getSeriesConfig(userId) {
+    const query = userId ? { user: userId } : {};
+    const brands = await Brand.find(query).lean();
+    const seriesList = await Series.find(query).populate('brand').lean();
     
     // Result structure: brand_series_options[brandName][seriesName] = [sub1, sub2, ...]
     const brand_series_options = {};
@@ -50,8 +52,9 @@ class SeriesService {
     };
   }
 
-  static async getAllSeries() {
-    const series = await Series.find().populate('brand').lean();
+  static async getAllSeries(userId) {
+    const query = userId ? { user: userId } : {};
+    const series = await Series.find(query).populate('brand').lean();
     return series.sort((a, b) => {
       const brandA = a.brand ? a.brand.name : "Unknown";
       const brandB = b.brand ? b.brand.name : "Unknown";
@@ -99,8 +102,9 @@ class SeriesService {
   }
 
   // Subseries Management
-  static async getAllSubseries() {
-    const subseries = await Subseries.find().populate({
+  static async getAllSubseries(userId) {
+    const query = userId ? { user: userId } : {};
+    const subseries = await Subseries.find(query).populate({
       path: 'series',
       populate: { path: 'brand' }
     }).lean();

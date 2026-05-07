@@ -39,7 +39,7 @@ router.get('/subseries/all', async (req, res) => {
 router.post('/add', async (req, res) => {
   try {
     const { name, brandId } = req.body;
-    await SeriesService.addSeries(name, brandId);
+    await SeriesService.addSeries(name, brandId, req.user._id);
     res.json({ success: true, message: `Series '${name}' added successfully!` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -49,7 +49,7 @@ router.post('/add', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, brandId } = req.body;
-    await SeriesService.updateSeries(req.params.id, { name, brandId });
+    await SeriesService.updateSeries(req.params.id, { name, brandId }, req.user._id);
     res.json({ success: true, message: "Series updated successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
 router.post('/subseries/add', async (req, res) => {
   try {
     const { seriesId, name } = req.body;
-    await SeriesService.addSubseries(seriesId, name);
+    await SeriesService.addSubseries(seriesId, name, req.user._id);
     res.json({ success: true, message: `Subseries '${name}' added successfully!` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -69,7 +69,7 @@ router.post('/subseries/add', async (req, res) => {
 router.put('/subseries/:id', async (req, res) => {
   try {
     const { name, seriesId } = req.body;
-    await SeriesService.updateSubseries(req.params.id, { name, seriesId });
+    await SeriesService.updateSubseries(req.params.id, { name, seriesId }, req.user._id);
     res.json({ success: true, message: "Subseries updated successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 router.post('/add', async (req, res) => {
   try {
     const { name } = req.body;
-    const newBrand = await SeriesService.addBrand(name);
+    const newBrand = await SeriesService.addBrand(name, req.user._id);
     res.json({ success: true, message: `Brand '${name}' added successfully!`, brand: newBrand });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -27,7 +27,7 @@ router.post('/add', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name } = req.body;
-    await SeriesService.updateBrand(req.params.id, name);
+    await SeriesService.updateBrand(req.params.id, name, req.user._id);
     res.json({ success: true, message: "Brand updated successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

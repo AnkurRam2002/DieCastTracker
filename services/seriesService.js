@@ -9,16 +9,18 @@ class SeriesService {
     return await Brand.find(query).sort({ name: 1 }).lean();
   }
 
-  static async addBrand(name) {
-    const existing = await Brand.findOne({ name: name.trim() });
+  static async addBrand(name, userId) {
+    const existing = await Brand.findOne({ name: name.trim(), user: userId });
     if (existing) throw new Error(`Brand '${name}' already exists`);
-    const newBrand = new Brand({ name: name.trim() });
+    const newBrand = new Brand({ name: name.trim(), user: userId });
     await newBrand.save();
     return newBrand;
   }
 
-  static async updateBrand(id, name) {
-    return await Brand.findByIdAndUpdate(id, { name: name.trim() }, { new: true });
+  static async updateBrand(id, name, userId) {
+    const existing = await Brand.findOne({ name: name.trim(), user: userId, _id: { $ne: id } });
+    if (existing) throw new Error(`Brand '${name}' already exists`);
+    return await Brand.findOneAndUpdate({ _id: id, user: userId }, { name: name.trim() }, { new: true });
   }
 
   // Series Management
@@ -64,21 +66,22 @@ class SeriesService {
     });
   }
 
-  static async addSeries(name, brandId) {
-    const existing = await Series.findOne({ name: name.trim(), brand: brandId });
+  static async addSeries(name, brandId, userId) {
+    const existing = await Series.findOne({ name: name.trim(), brand: brandId, user: userId });
     if (existing) throw new Error(`Series '${name}' already exists for this brand`);
 
     const newSeries = new Series({
       name: name.trim(),
-      brand: brandId
+      brand: brandId,
+      user: userId
     });
     await newSeries.save();
     return newSeries;
   }
 
-  static async updateSeries(id, updates) {
+  static async updateSeries(id, updates, userId) {
     const { name, brandId } = updates;
-    const series = await Series.findById(id);
+    const series = await Series.findOne({ _id: id, user: userId });
     if (!series) throw new Error('Series not found');
 
     if (name || brandId) {
@@ -88,7 +91,8 @@ class SeriesService {
       const collision = await Series.findOne({ 
         _id: { $ne: id }, 
         name: checkName, 
-        brand: checkBrand 
+        brand: checkBrand,
+        user: userId
       });
       
       if (collision) throw new Error(`Series '${checkName}' already exists for this brand`);
@@ -122,24 +126,29 @@ class SeriesService {
     });
   }
 
-  static async addSubseries(seriesId, name) {
-    const existing = await Subseries.findOne({ name: name.trim(), series: seriesId });
+  static async addSubseries(seriesId, name, userId) {
+    const existing = await Subseries.findOne({ name: name.trim(), series: seriesId, user: userId });
     if (existing) throw new Error(`Subseries '${name}' already exists in this series`);
 
     const newSub = new Subseries({
       name: name.trim(),
-      series: seriesId
+      series: seriesId,
+      user: userId
     });
     await newSub.save();
     return newSub;
   }
 
-  static async updateSubseries(id, updates) {
+  static async updateSubseries(id, updates, userId) {
     const { name, seriesId } = updates;
-    const sub = await Subseries.findById(id);
+    const sub = await Subseries.findOne({ _id: id, user: userId });
     if (!sub) throw new Error('Subseries not found');
 
-    if (name) sub.name = name.trim();
+    if (name) {
+      const existing = await Subseries.findOne({ name: name.trim(), series: seriesId || sub.series, user: userId, _id: { $ne: id } });
+      if (existing) throw new Error(`Subseries '${name}' already exists in this series`);
+      sub.name = name.trim();
+    }
     if (seriesId) sub.series = seriesId;
 
     await sub.save();

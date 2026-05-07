@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     const data = result.data.map(po => ({
       "S.No": po.serial_number,
       "Seller": po.seller,
-      "Models": po.models,
+      "Items": po.models,
       "ETA": po.eta,
       "Total Price": po.total_price,
       "PO Amount": po.po_amount,

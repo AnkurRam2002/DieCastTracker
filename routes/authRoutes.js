@@ -56,4 +56,32 @@ router.get('/profile', protect, async (req, res) => {
   res.json({ success: true, user: req.user });
 });
 
+router.put('/preferences', protect, async (req, res) => {
+  try {
+    const { primary_brand, secondary_brand } = req.body;
+    const newPrimary = Object.prototype.hasOwnProperty.call(req.body, 'primary_brand') 
+      ? primary_brand 
+      : req.user.primary_brand;
+    const newSecondary = Object.prototype.hasOwnProperty.call(req.body, 'secondary_brand') 
+      ? secondary_brand 
+      : req.user.secondary_brand;
+
+    if (newPrimary && newSecondary && newPrimary === newSecondary) {
+      return res.status(400).json({ success: false, error: 'Primary and secondary brands cannot be the same' });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'primary_brand')) {
+      req.user.primary_brand = primary_brand;
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'secondary_brand')) {
+      req.user.secondary_brand = secondary_brand;
+    }
+    
+    await req.user.save();
+    res.json({ success: true, user: req.user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

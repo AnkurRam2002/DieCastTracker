@@ -74,6 +74,8 @@ export const authService = {
   register: (username: string, password: string) =>
     api.post('/api/auth/register', { username, password }).then(res => res.data),
   profile: () => api.get('/api/auth/profile').then(res => res.data),
+  updatePreferences: (data: { primary_brand?: string | null, secondary_brand?: string | null }) => 
+    api.put('/api/auth/preferences', data).then(res => res.data),
 };
 
 export default api;

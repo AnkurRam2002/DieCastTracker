@@ -1,6 +1,6 @@
-# DieCastTracker
+# The Collector's Registry
 
-A modern, full-stack web application designed for Hot Wheels and die-cast car collectors. DieCastTracker helps you organize your collection, track pre-orders, manage categories, and visualize your collection statistics with ease.
+A modern, full-stack web application designed for collectors of all types—Hot Wheels, action figures, collectible toys, and more. The Collector's Registry helps you organize your collection, track pre-orders, manage categories, and visualize your collection statistics with ease.
 
 ## 🚀 Tech Stack
 
@@ -20,19 +20,40 @@ A modern, full-stack web application designed for Hot Wheels and die-cast car co
 - **Authentication**: JWT (JSON Web Tokens) & bcryptjs
 - **Logging**: Morgan
 
-## ✨ Features
+## ✨ Detailed Features
 
-- **Relational Categorization**: Organize your collection by Brands, Series, and Subseries using structured relational models.
-- **Detailed Model Tracking**: Keep track of model metadata, numbers, and custom details.
-- **Pre-order Management**: Track pending orders, payment statuses, and estimated times of arrival.
-- **Analytics Dashboard**: Interactive charts and statistics to visualize the growth and distribution of your collection.
-- **User Scoping**: Multi-tenant data handling with user-scoped uniqueness constraints ensuring secure, private collections.
-- **Modern UI/UX**: Sleek, responsive, and animated user interface built with Tailwind and Framer Motion.
+### 📊 Interactive Dashboard & Analytics
+- **Visual Insights**: Dynamic charts displaying collection distributions by Brand, Series, and overall items.
+- **Progress Tracking**: Real-time progress bars for financial commitments like Pre-order payments.
+- **Quick Statistics**: High-level overview cards summarizing Total Items, Missing Numbers, and Total Pre-orders.
+
+### 📦 Comprehensive Item Management
+- **Detailed Tracking**: Add items with deep metadata, including Brand, Series, Sub-series, Item Numbers, and Custom Notes.
+- **Dynamic Registry Tabs**: User-customizable tabbed navigation based on preferred brands (e.g., Hot Wheels, Matchbox, Lego).
+- **Advanced Filtering & Sorting**: Quickly search and filter your inventory by various fields and relational categories.
+
+### 🏢 Relational Categorization Engine
+- **Brands, Series & Subseries**: A robust hierarchical system mapping items directly to specific Series and Brands.
+- **Validation Constraints**: Built-in backend and frontend validation prevents duplicate categories within user-scoped boundaries.
+- **Tab Preferences**: Users can toggle which Brands appear on their main navigation bar dynamically.
+
+### 🛒 Pre-order & Financial Tracking
+- **Order Lifecycle**: Track pending pre-orders, estimated arrival times (ETA), and payment statuses.
+- **Cost Management**: Record full prices versus deposits paid to calculate remaining balances automatically.
+- **Inventory Integration**: Pre-orders transition seamlessly into your main collection upon arrival.
+
+### 🔒 Secure User Authentication
+- **Multi-Tenant Architecture**: Each user's collection, brands, and settings are fully sandboxed.
+- **Robust Security**: JWT-based authentication and robust password hashing (bcryptjs) keep collections private.
+
+### 🎨 Premium Modern UI/UX
+- **Sleek Aesthetic**: Built with Tailwind CSS v4, featuring a responsive, modern interface.
+- **Micro-Animations**: Framer Motion powers smooth page transitions, hover effects, and dynamic list renderings.
 
 ## 📁 Project Structure
 
 ```
-DieCastTracker/
+collectors-registry/
 ├── frontend/               # React Vite Frontend App
 │   ├── src/                # Components, Pages, Context, etc.
 │   └── package.json        # Frontend Dependencies
@@ -105,4 +126,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ## 📝 License
 
-This project is created for die-cast collectors worldwide.
+This project is created for collectors worldwide.

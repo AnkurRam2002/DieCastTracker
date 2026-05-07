@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/api';
-import { PlusCircle, ArrowLeft, Car, Layers, List, CheckCircle, Hash } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Package, Layers, List, CheckCircle, Hash } from 'lucide-react';
 
 export const AddModel: React.FC = () => {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ export const AddModel: React.FC = () => {
             New Entry
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight mt-1">Add to Collection</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Register a new die-cast model in the registry.</p>
+          <p className="text-slate-500 mt-2 text-sm font-medium">Register a new collectible in the registry.</p>
         </div>
 
         {/* Feedback */}
@@ -92,8 +92,8 @@ export const AddModel: React.FC = () => {
             {/* Model Name */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 label-xs">
-                <Car className="w-3.5 h-3.5 text-amber-500" />
-                Model Name <span className="text-amber-500">*</span>
+                <Package className="w-3.5 h-3.5 text-amber-500" />
+                Item Name <span className="text-amber-500">*</span>
               </label>
               <input
                 type="text" required

@@ -126,7 +126,7 @@ export const Analytics: React.FC = () => {
             <Brain className="w-8 h-8 text-amber-500" />
           </h1>
           <p className="text-slate-500 mt-2 font-medium max-w-xl">
-            A high-fidelity analysis of your die-cast network, tracking financial commitments, taxonomic spread, and growth milestones.
+            A high-fidelity analysis of your collectible network, tracking financial commitments, taxonomic spread, and growth milestones.
           </p>
         </div>
         <div className="hidden lg:flex items-center gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-3xl backdrop-blur-md">
@@ -264,7 +264,7 @@ export const Analytics: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-[10px] font-black text-blue-500/60 uppercase tracking-widest mb-1">{item['Brand']}</div>
-                    <div className="text-sm font-black text-white group-hover/row:text-blue-400 transition-colors uppercase leading-tight">{item['Model Name']}</div>
+                    <div className="text-sm font-black text-white group-hover/row:text-blue-400 transition-colors uppercase leading-tight">{item['Item Name']}</div>
                   </div>
                   <div className="text-[10px] font-black text-slate-600 bg-white/5 px-2 py-1 rounded-lg border border-white/5 italic">
                     #{item['S.No']}

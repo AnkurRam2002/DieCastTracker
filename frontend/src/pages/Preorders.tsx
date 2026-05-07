@@ -82,17 +82,17 @@ export const Preorders: React.FC = () => {
   // Removed local useMemo arrays and filtering
 
   const safeParse = (v: any) => parseFloat(String(v).replace(/[₹,\s]/g, '')) || 0;
-  const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
   const statsData = useMemo(() => {
     if (!stats) return { totalRecords: 0, totalCommited: 0, totalPO: 0, totalArrival: 0, paymentDone: 0, remaining: 0 };
     return {
-      totalRecords: stats.total_preorders,
-      totalCommited: stats.total_value,
-      totalPO: stats.total_po_amount,
-      totalArrival: stats.total_on_arrival,
+      totalRecords: stats.total_preorders || 0,
+      totalCommited: stats.total_value || 0,
+      totalPO: stats.total_po_amount || 0,
+      totalArrival: stats.total_on_arrival || 0,
       paymentDone: stats.total_paid || 0,
-      remaining: stats.active_remaining
+      remaining: stats.active_remaining || 0
     };
   }, [stats]);
 
@@ -161,7 +161,7 @@ export const Preorders: React.FC = () => {
           <h1 className="text-4xl font-black tracking-tight text-white">
             Order <span className="text-amber-400">Vault</span>
           </h1>
-          <p className="text-slate-500 mt-2 font-medium">Tracking {statsData.totalRecords} upcoming die-cast treasures.</p>
+          <p className="text-slate-500 mt-2 font-medium">Tracking {statsData.totalRecords} upcoming collectible treasures.</p>
         </div>
         <button onClick={() => setIsAddModalOpen(true)} className="btn-primary self-start md:self-auto">
           <Plus className="w-4 h-4" />
@@ -179,11 +179,11 @@ export const Preorders: React.FC = () => {
             <div className="flex h-2 w-full bg-white/5 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-emerald-500 transition-all duration-1000" 
-                style={{ width: `${(statsData.paymentDone / statsData.totalCommited) * 100}%` }}
+                style={{ width: `${statsData.totalCommited ? (statsData.paymentDone / statsData.totalCommited) * 100 : 0}%` }}
               />
               <div 
                 className="h-full bg-red-500 transition-all duration-1000" 
-                style={{ width: `${(statsData.remaining / statsData.totalCommited) * 100}%` }}
+                style={{ width: `${statsData.totalCommited ? (statsData.remaining / statsData.totalCommited) * 100 : 0}%` }}
               />
             </div>
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
@@ -212,7 +212,7 @@ export const Preorders: React.FC = () => {
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search models or seller…" className="input pl-11" />
+            placeholder="Search items or seller…" className="input pl-11" />
         </div>
         <div className="relative">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
@@ -237,7 +237,7 @@ export const Preorders: React.FC = () => {
       </div>
 
       <Table
-        columns={['S.No', 'Seller', 'Models', 'ETA', 'Financials', 'Status']}
+        columns={['S.No', 'Seller', 'Items', 'ETA', 'Financials', 'Status']}
         data={preorders.map(p => {
           const total = safeParse(p['Total Price']);
           const poAmt = safeParse(p['PO Amount']);
@@ -264,11 +264,11 @@ export const Preorders: React.FC = () => {
                   <div className="flex h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-emerald-500" 
-                      style={{ width: `${(paid / total) * 100}%` }}
+                      style={{ width: `${total ? (paid / total) * 100 : 0}%` }}
                     />
                     <div 
                       className="h-full bg-red-500" 
-                      style={{ width: `${(pending / total) * 100}%` }}
+                      style={{ width: `${total ? (pending / total) * 100 : 0}%` }}
                     />
                   </div>
                   <div className="flex justify-between text-[9px] font-black uppercase tracking-tight opacity-80">

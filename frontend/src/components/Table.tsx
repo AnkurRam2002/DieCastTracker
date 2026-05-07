@@ -20,7 +20,7 @@ export const Table: React.FC<TableProps> = ({
   onPageChange, onItemsPerPageChange
 }) => {
   const renderCell = (row: any, col: string) => {
-    if (col === 'Model Name' && row['Model No']) {
+    if (col === 'Item Name' && row['Item No']) {
       return (
         <div className="flex items-center gap-2">
           <span className="whitespace-normal break-normal leading-snug">{row[col]}</span>
@@ -31,7 +31,7 @@ export const Table: React.FC<TableProps> = ({
               <Eye className="w-3.5 h-3.5" />
             </span>
             <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-max -translate-x-1/2 scale-95 rounded-lg border border-amber-500/30 bg-slate-950/95 px-2.5 py-1.5 text-[11px] font-bold tracking-wide text-amber-200 opacity-0 shadow-lg shadow-amber-500/10 backdrop-blur-sm transition-all duration-150 peer-hover:scale-100 peer-hover:opacity-100">
-              {row['Model No']}
+              {row['Item No']}
             </span>
           </span>
         </div>

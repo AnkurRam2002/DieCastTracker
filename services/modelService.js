@@ -13,19 +13,35 @@ class ModelService {
       mainSeriesFilter = '',
       seriesFilter = '', // This maps to subseries on frontend
       sortOrder = 'asc',
-      tab = 'hotwheels'
+      tab = 'primary'
     } = options;
 
     const query = userId ? { user: userId } : {};
 
-    // Base Brand references
-    const hwBrand = await Brand.findOne({ name: 'Hot Wheels', ...query });
-
     // 1. Exact Filters
-    if (tab === 'hotwheels') {
-      if (hwBrand) query['metadata.brand'] = hwBrand._id;
+    const User = require('../models/User');
+    const userDoc = await User.findById(userId);
+    const primaryName = userDoc?.primary_brand;
+    const secondaryName = userDoc?.secondary_brand;
+
+    const pBrand = primaryName ? await Brand.findOne({ name: primaryName, ...query }) : null;
+    const sBrand = secondaryName ? await Brand.findOne({ name: secondaryName, ...query }) : null;
+
+    if (tab === 'primary') {
+      if (pBrand) query['metadata.brand'] = pBrand._id;
+      else query['metadata.brand'] = null; // Should return empty if no brand set
+    } else if (tab === 'secondary') {
+      if (sBrand) query['metadata.brand'] = sBrand._id;
+      else query['metadata.brand'] = null;
     } else if (tab === 'others') {
-      if (hwBrand) query['metadata.brand'] = { $ne: hwBrand._id };
+      const excludeIds = [];
+      if (pBrand) excludeIds.push(pBrand._id);
+      if (sBrand) excludeIds.push(sBrand._id);
+      
+      if (excludeIds.length > 0) {
+        query['metadata.brand'] = { $nin: excludeIds };
+      }
+      
       if (brandFilter) {
         const tgtBrand = await Brand.findOne({ name: brandFilter, ...query });
         if (tgtBrand) query['metadata.brand'] = tgtBrand._id;

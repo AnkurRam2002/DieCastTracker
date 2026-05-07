@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const SeriesService = require('../services/seriesService');
+const { protect } = require('../middleware/auth');
+
+router.use(protect);
 
 router.get('/', async (req, res) => {
   try {
-    const brands = await SeriesService.getAllBrands();
+    const brands = await SeriesService.getAllBrands(req.user._id);
     res.json({ success: true, brands });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

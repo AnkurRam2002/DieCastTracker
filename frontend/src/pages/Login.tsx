@@ -38,7 +38,7 @@ const Login: React.FC = () => {
       <div className="card w-full max-w-md p-8 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-500">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 mb-4 shadow-lg shadow-amber-500/20">
-            <span className="text-2xl font-black text-slate-900">DT</span>
+            <span className="text-2xl font-black text-slate-900">CR</span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Welcome Back</h1>
           <p className="text-slate-400 mt-2 font-medium">Log in to manage your collection</p>

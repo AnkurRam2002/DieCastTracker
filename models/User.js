@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema({
   email: { type: String },
   password: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant' },
   primary_brand: { type: String, default: null },
   secondary_brand: { type: String, default: null }
 }, { timestamps: true });

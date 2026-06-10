@@ -4,6 +4,14 @@ const ModelService = require('../services/modelService');
 const SeriesService = require('../services/seriesService');
 const Model = require('../models/Model');
 const { protect } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
+
+const addModelLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, error: 'Too many models added, please try again later' },
+  statusCode: 429
+});
 
 router.use(protect);
 
@@ -43,9 +51,18 @@ router.get('/data', async (req, res) => {
   }
 });
 
-router.post('/add', async (req, res) => {
+router.post('/add', addModelLimiter, async (req, res) => {
   try {
     const { model_name, series, subseries, brand, model_no } = req.body;
+    
+    // Input validation
+    if (!model_name || typeof model_name !== 'string' || model_name.trim() === '') {
+      return res.status(400).json({ success: false, error: 'Valid model_name is required' });
+    }
+    if (model_no && typeof model_no !== 'string') {
+      return res.status(400).json({ success: false, error: 'model_no must be a string' });
+    }
+
     const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no, req.user._id);
     res.json({
       success: true,

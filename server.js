@@ -29,7 +29,16 @@ mongoose.connect(MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, error: 'Too many requests, please try again later.' },
+  statusCode: 429,
+});
+
+app.get('/health', apiLimiter, (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

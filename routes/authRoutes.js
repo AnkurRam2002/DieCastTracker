@@ -26,13 +26,21 @@ const registerLimiter = rateLimit({
 });
 
 router.post('/register', registerLimiter, async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   try {
+    if (email) {
+      const disposableDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'yopmail.com'];
+      const domain = email.split('@')[1];
+      if (domain && disposableDomains.includes(domain.toLowerCase())) {
+        return res.status(400).json({ success: false, error: 'Sign-ups from disposable email domains are not allowed' });
+      }
+    }
+
     const userExists = await User.findOne({ username });
     if (userExists) {
       return res.status(400).json({ success: false, error: 'User already exists' });
     }
-    const user = await User.create({ username, password });
+    const user = await User.create({ username, email, password });
     if (user) {
       res.status(201).json({
         success: true,

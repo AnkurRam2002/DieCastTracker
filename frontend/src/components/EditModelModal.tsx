@@ -18,17 +18,19 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
     model_no: '',
     series: '',
     subseries: '',
-    brand: ''
+    brand: '',
+    scale: ''
   });
 
   useEffect(() => {
     if (isOpen && model) {
       setFormData({
-        model_name: model['Model Name'] || '',
-        model_no: model['Model No'] || '',
+        model_name: model['Item Name'] || model['Model Name'] || '',
+        model_no: model['Item No'] || model['Model No'] || '',
         series: model['Series'] || '',
         subseries: model['Subseries'] || '',
-        brand: model['Brand'] || 'Hot Wheels'
+        brand: model['Brand'] || 'Hot Wheels',
+        scale: model['Scale'] || ''
       });
       
       dataService.getDropdownOptions()
@@ -64,7 +66,8 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
           "Model No": formData.model_no,
           "Series": formData.series,
           "Subseries": formData.subseries,
-          "brand": formData.brand
+          "brand": formData.brand,
+          "Scale": formData.scale
         }
       });
       onClose();
@@ -127,6 +130,20 @@ export const EditModelModal: React.FC<EditModelModalProps> = ({ isOpen, onClose,
                 onChange={e => setFormData({ ...formData, model_no: e.target.value })}
                 className="input"
                 placeholder="Optional model no..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 label-xs translate-x-1">
+                <Hash className="w-3 h-3 text-amber-500" />
+                Scale
+              </label>
+              <input
+                type="text"
+                value={formData.scale}
+                onChange={e => setFormData({ ...formData, scale: e.target.value })}
+                className="input"
+                placeholder="e.g. 1:64"
               />
             </div>
           </div>

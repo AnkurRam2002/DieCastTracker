@@ -29,7 +29,7 @@ router.post('/register', registerLimiter, async (req, res) => {
   const { username, email, password } = req.body;
   try {
     if (email) {
-      const disposableDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'yopmail.com'];
+      const disposableDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'yopmail.com', 'throwawaymail.com'];
       const domain = email.split('@')[1];
       if (domain && disposableDomains.includes(domain.toLowerCase())) {
         return res.status(400).json({ success: false, error: 'Sign-ups from disposable email domains are not allowed' });

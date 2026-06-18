@@ -1,6 +1,6 @@
 # The Collector's Registry
 
-A modern, full-stack web application designed for collectors of all types—Hot Wheels, action figures, collectible toys, and more. The Collector's Registry helps you organize your collection, track pre-orders, manage categories, and visualize your collection statistics with ease.
+This is my personal passion project—a modern, full-stack web application I built to solve a problem I face every day: keeping track of my ever-growing collection of Hot Wheels, action figures, and collectible toys. Before this, I constantly lost track of what I already owned, what I had on pre-order, and how much I was spending. I built The Collector's Registry for my own daily use to seamlessly organize my inventory, manage categories, track my pre-orders, and visualize my collection's statistics all in one beautiful place.
 
 ## 🚀 Tech Stack
 

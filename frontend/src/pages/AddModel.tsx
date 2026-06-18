@@ -9,7 +9,7 @@ export const AddModel: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [seriesOptions, setSeriesOptions] = useState<Record<string, Record<string, string[]>>>({});
-  const [form, setForm] = useState({ model_name: '', model_no: '', series: '', subseries: '', brand: 'Hot Wheels', scale: '1:64' });
+  const [form, setForm] = useState({ model_name: '', model_no: '', series: '', subseries: '', brand: 'Hot Wheels' });
 
   useEffect(() => {
     dataService.getDropdownOptions()
@@ -34,7 +34,7 @@ export const AddModel: React.FC = () => {
       const res = await dataService.addModel(form);
       if (res.success) {
         setSuccess(res.message || 'Model added to collection!');
-        setForm({ model_name: '', model_no: '', series: '', subseries: '', brand: form.brand, scale: '1:64' });
+        setForm({ model_name: '', model_no: '', series: '', subseries: '', brand: form.brand });
       } else {
         setError(res.error || 'Failed to add model.');
       }
@@ -119,20 +119,6 @@ export const AddModel: React.FC = () => {
               />
             </div>
 
-            {/* Scale */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 label-xs">
-                <Hash className="w-3.5 h-3.5 text-amber-500" />
-                Scale
-              </label>
-              <input
-                type="text"
-                value={form.scale}
-                onChange={e => setForm({ ...form, scale: e.target.value })}
-                placeholder="e.g. 1:64"
-                className="input"
-              />
-            </div>
           </div>
 
           {/* Brand / Series / Subseries Row */}

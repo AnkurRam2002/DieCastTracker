@@ -101,7 +101,7 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
                   type="text"
                   value={formData.models}
                   onChange={e => setFormData({ ...formData, models: e.target.value })}
-                  placeholder="Model name, scale, etc..."
+                  placeholder="Model name, etc..."
                   className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50"
                 />
               </div>

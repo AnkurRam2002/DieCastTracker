@@ -35,14 +35,13 @@ router.get('/data', async (req, res) => {
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
       "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
-      "Item No": m.metadata.model_no || "",
-      "Scale": m.metadata.scale || ""
+      "Item No": m.metadata.model_no || ""
     }));
 
     res.json({
       success: true,
       data: data,
-      columns: ["S.No", "Item Name", "Subseries", "Series", "Brand", "Scale"],
+      columns: ["S.No", "Item Name", "Subseries", "Series", "Brand"],
       total_records: result.total,
       page: result.page,
       total_pages: result.totalPages
@@ -54,7 +53,7 @@ router.get('/data', async (req, res) => {
 
 router.post('/add', addModelLimiter, async (req, res) => {
   try {
-    const { model_name, series, subseries, brand, model_no, scale } = req.body;
+    const { model_name, series, subseries, brand, model_no } = req.body;
     
     // Input validation
     if (!model_name || typeof model_name !== 'string' || model_name.trim() === '') {
@@ -64,7 +63,7 @@ router.post('/add', addModelLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'model_no must be a string' });
     }
 
-    const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no, req.user._id, scale);
+    const newM = await ModelService.addModel(model_name, series, subseries, brand, model_no, req.user._id);
     res.json({
       success: true,
       message: `Successfully added '${model_name}' to the collection!`,
@@ -166,8 +165,7 @@ router.get('/search', async (req, res) => {
       "Subseries": m.metadata.subseries ? m.metadata.subseries.name : "",
       "Series": m.metadata.series ? m.metadata.series.name : "",
       "Brand": m.metadata.brand ? m.metadata.brand.name : "Hot Wheels",
-      "Item No": m.metadata.model_no || "",
-      "Scale": m.metadata.scale || ""
+      "Item No": m.metadata.model_no || ""
     }));
 
     res.json({

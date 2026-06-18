@@ -7,8 +7,7 @@ const modelSchema = new mongoose.Schema({
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
     series: { type: mongoose.Schema.Types.ObjectId, ref: 'Series', required: false },
     subseries: { type: mongoose.Schema.Types.ObjectId, ref: 'Subseries', required: false },
-    model_no: { type: String, required: false },
-    scale: { type: String, required: false }
+    model_no: { type: String, required: false }
   },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true },
   date_added: { type: Date, default: Date.now }

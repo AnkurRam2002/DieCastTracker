@@ -138,7 +138,7 @@ class ModelService {
     };
   }
 
-  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "", userId, scale = "") {
+  static async addModel(modelName, seriesName, subseriesName, brandName = "Hot Wheels", modelNo = "", userId) {
     const query = userId ? { user: userId } : {};
 
     // 1. Determine next serial number logic per user
@@ -193,8 +193,7 @@ class ModelService {
         brand: brand._id,
         series: series ? series._id : null,
         subseries: subseries ? subseries._id : null,
-        model_no: modelNo ? String(modelNo).trim() : "",
-        scale: scale ? String(scale).trim() : ""
+        model_no: modelNo ? String(modelNo).trim() : ""
       }
     });
     await newModel.save();
@@ -214,10 +213,6 @@ class ModelService {
 
     if (Object.prototype.hasOwnProperty.call(updates, "Model No")) {
       modelObj.metadata.model_no = updates["Model No"] ? String(updates["Model No"]).trim() : "";
-    }
-
-    if (Object.prototype.hasOwnProperty.call(updates, "Scale")) {
-      modelObj.metadata.scale = updates["Scale"] ? String(updates["Scale"]).trim() : "";
     }
 
     if (updates["Series"] || updates["Subseries"] || updates["brand"] || updates["Brand"]) {

@@ -8,7 +8,8 @@ class PreorderService {
       search = '',
       sellerFilter = '',
       statusFilter = '',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
+      timeFilter = ''
     } = options;
 
     const query = userId ? { user: userId } : {};
@@ -19,6 +20,25 @@ class PreorderService {
     
     if (statusFilter) {
       query.delivery_status = statusFilter;
+    }
+
+    if (timeFilter) {
+      if (timeFilter === 'upcoming_month') {
+        const today = new Date();
+        const currentMonthStr = today.toISOString().slice(0, 7);
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        const nextMonthStr = nextMonth.toISOString().slice(0, 7);
+        
+        if (!statusFilter) {
+          query.delivery_status = { $ne: 'Delivered' };
+        }
+        query.eta = { $in: [currentMonthStr, nextMonthStr] };
+      } else {
+        if (!statusFilter) {
+          query.delivery_status = { $ne: 'Delivered' };
+        }
+        query.eta = { $lte: timeFilter };
+      }
     }
 
     if (search) {
@@ -126,6 +146,11 @@ class PreorderService {
     }
 
     return true;
+  }
+
+  static async getSellers(userId) {
+    const query = userId ? { user: userId } : {};
+    return await Preorder.distinct("seller", query);
   }
 
   static async getStatistics(userId) {

@@ -9,6 +9,7 @@ import { Preorders } from './pages/Preorders';
 import { Analytics } from './pages/Analytics';
 import { AddModel } from './pages/AddModel';
 import { SeriesManagement } from './pages/SeriesManagement';
+import { Settings } from './pages/Settings'; // Added Settings
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/add" element={<AddModel />} />
             <Route path="/manage/:type" element={<SeriesManagement />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
       </Router>

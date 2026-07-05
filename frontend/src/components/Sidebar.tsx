@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Tags,
-  FolderOpen
+  FolderOpen,
+  Settings
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +29,7 @@ const navItems = [
 
 export const Sidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const inner = (
     <div className="flex flex-col h-full relative z-10">
@@ -87,10 +88,23 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      <div className="p-4 mt-auto border-t border-white/5">
+      <div className="p-4 mt-auto border-t border-white/5 space-y-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl border border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold">
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-white leading-tight">{user?.username || 'User'}</span>
+            </div>
+          </div>
+          <NavLink to="/settings" className="text-slate-400 hover:text-amber-400 transition-colors p-1" onClick={() => setMobileOpen(false)}>
+            <Settings className="w-4 h-4" />
+          </NavLink>
+        </div>
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-red-500/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-red-500/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
           Logout
         </button>

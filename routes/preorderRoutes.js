@@ -7,7 +7,7 @@ router.use(protect);
 
 router.get('/', async (req, res) => {
   try {
-    const { page, limit, search, sellerFilter, statusFilter, sortOrder } = req.query;
+    const { page, limit, search, sellerFilter, statusFilter, sortOrder, timeFilter } = req.query;
     
     const result = await PreorderService.getAllPreorders(req.user._id, {
       page: parseInt(page) || 1,
@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
       search: search || '',
       sellerFilter: sellerFilter || '',
       statusFilter: statusFilter || '',
-      sortOrder: sortOrder || 'desc'
+      sortOrder: sortOrder || 'desc',
+      timeFilter: timeFilter || ''
     });
 
     const data = result.data.map(po => ({
@@ -47,6 +48,15 @@ router.post('/', async (req, res) => {
     const { seller, models, eta, total_price, po_amount, on_arrival_amount, delivery_status } = req.body;
     await PreorderService.addPreorder(seller, models, eta, total_price, po_amount, on_arrival_amount, delivery_status, req.user._id);
     res.json({ success: true, message: "Preorder added successfully!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/sellers', async (req, res) => {
+  try {
+    const sellers = await PreorderService.getSellers(req.user._id);
+    res.json({ success: true, sellers: sellers.sort() });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -81,7 +81,7 @@ router.get('/profile', protect, async (req, res) => {
 
 router.put('/preferences', protect, async (req, res) => {
   try {
-    const { primary_brand, secondary_brand } = req.body;
+    const { primary_brand, secondary_brand, email } = req.body;
     const newPrimary = Object.prototype.hasOwnProperty.call(req.body, 'primary_brand') 
       ? primary_brand 
       : req.user.primary_brand;
@@ -98,6 +98,10 @@ router.put('/preferences', protect, async (req, res) => {
     }
     if (Object.prototype.hasOwnProperty.call(req.body, 'secondary_brand')) {
       req.user.secondary_brand = secondary_brand;
+    }
+    
+    if (Object.prototype.hasOwnProperty.call(req.body, 'email')) {
+      req.user.email = email;
     }
     
     await req.user.save();

@@ -59,6 +59,7 @@ export const preorderService = {
     return api.get(`/api/preorders?${qs}`).then(res => res.data);
   },
   getStats: () => api.get('/api/preorders/statistics').then(res => res.data),
+  getSellers: () => api.get('/api/preorders/sellers').then(res => res.data),
   add: (data: any) => api.post('/api/preorders', data).then(res => res.data),
   update: (serial_number: number, updates: any) => api.put(`/api/preorders/${serial_number}`, updates).then(res => res.data),
   delete: (serial_number: number) => api.delete(`/api/preorders/${serial_number}`).then(res => res.data),
@@ -74,7 +75,7 @@ export const authService = {
   register: (username: string, password: string) =>
     api.post('/api/auth/register', { username, password }).then(res => res.data),
   profile: () => api.get('/api/auth/profile').then(res => res.data),
-  updatePreferences: (data: { primary_brand?: string | null, secondary_brand?: string | null }) => 
+  updatePreferences: (data: { primary_brand?: string | null, secondary_brand?: string | null, email?: string }) => 
     api.put('/api/auth/preferences', data).then(res => res.data),
 };
 

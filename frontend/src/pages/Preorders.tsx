@@ -17,6 +17,7 @@ export const Preorders: React.FC = () => {
   const [preorders, setPreorders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [sellers, setSellers] = useState<string[]>([]);
 
   // Pagination & Backend Metadata
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +27,7 @@ export const Preorders: React.FC = () => {
 
   const [sellerFilter, setSellerFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState('');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -43,8 +45,14 @@ export const Preorders: React.FC = () => {
   }, [search]);
 
   useEffect(() => {
+    preorderService.getSellers().then(res => {
+      if (res.success) setSellers(res.sellers);
+    });
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
-  }, [sellerFilter, statusFilter, sortOrder, itemsPerPage]);
+  }, [sellerFilter, statusFilter, timeFilter, sortOrder, itemsPerPage]);
 
   const fetchPreorders = async () => {
     setLoading(true);
@@ -56,7 +64,8 @@ export const Preorders: React.FC = () => {
           search: debouncedSearch,
           sellerFilter,
           statusFilter,
-          sortOrder
+          sortOrder,
+          timeFilter
         }),
         preorderService.getStats()
       ]);
@@ -77,7 +86,7 @@ export const Preorders: React.FC = () => {
 
   useEffect(() => {
     fetchPreorders();
-  }, [currentPage, itemsPerPage, debouncedSearch, sellerFilter, statusFilter, sortOrder]);
+  }, [currentPage, itemsPerPage, debouncedSearch, sellerFilter, statusFilter, timeFilter, sortOrder]);
 
   // Removed local useMemo arrays and filtering
 
@@ -218,7 +227,7 @@ export const Preorders: React.FC = () => {
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)} className="select pl-11 pr-5 w-auto min-w-[160px]">
             <option value="">All Sellers</option>
-            {/* dynamic sellers removed since we page them, wait for auto-complete later if needed */}
+            {sellers.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
@@ -226,6 +235,16 @@ export const Preorders: React.FC = () => {
           <option value="">All Statuses</option>
           {['Pending','Paid','Shipped','Delivered'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        
+        <div className="relative flex items-center bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2 focus-within:border-amber-500/50 transition-colors hover:border-white/10">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap mr-2">Pending Till:</label>
+          <input 
+            type="month" 
+            value={timeFilter === 'upcoming_month' ? '' : timeFilter} 
+            onChange={e => setTimeFilter(e.target.value)}
+            className="bg-transparent text-sm text-white focus:outline-none min-w-[120px] [&::-webkit-calendar-picker-indicator]:invert-[0.7]"
+          />
+        </div>
 
         <button 
           onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}

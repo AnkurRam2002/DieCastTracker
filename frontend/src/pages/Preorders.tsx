@@ -240,13 +240,13 @@ export const Preorders: React.FC = () => {
         <div className="relative flex items-center bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2 focus-within:border-amber-500/50 transition-colors hover:border-white/10">
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap mr-2">Pending Till:</label>
           <input 
-            type={timeFilter === 'upcoming_month' || !timeFilter ? "text" : "month"}
+            type={/^\d{4}-\d{2}$/.test(timeFilter) ? "month" : "text"}
             placeholder="Month, Year"
-            onFocus={(e) => (e.target.type = "month")}
+            onFocus={(e) => { e.target.type = "month"; }}
             onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
             value={timeFilter === 'upcoming_month' ? '' : timeFilter} 
             onChange={e => setTimeFilter(e.target.value)}
-            className={`bg-transparent text-sm focus:outline-none min-w-[120px] [&::-webkit-calendar-picker-indicator]:invert-[0.7] ${timeFilter === 'upcoming_month' || !timeFilter ? 'text-slate-500' : 'text-white'}`}
+            className={`bg-transparent text-sm focus:outline-none min-w-[120px] [&::-webkit-calendar-picker-indicator]:invert-[0.7] ${!/^\d{4}-\d{2}$/.test(timeFilter) ? 'text-slate-500' : 'text-white'}`}
           />
         </div>
 

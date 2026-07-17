@@ -272,6 +272,7 @@ export const Preorders: React.FC = () => {
           
           return {
             ...p,
+            _original: p,
             'ETA': (
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex flex-col items-center justify-center border border-white/5 text-[10px] font-black uppercase text-amber-500/80">
@@ -323,7 +324,7 @@ export const Preorders: React.FC = () => {
         actions={(row) => (
           <div className="flex justify-end items-center gap-2">
             <button 
-              onClick={() => { setSelectedPreorder(row); setIsEditModalOpen(true); }}
+              onClick={() => { setSelectedPreorder(row._original); setIsEditModalOpen(true); }}
               className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 hover:bg-amber-500/15 border border-white/5 hover:border-amber-500/30 text-slate-500 hover:text-amber-400 transition-all">
               <Edit2 className="w-3 h-3" />
             </button>

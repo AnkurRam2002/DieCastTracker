@@ -104,6 +104,10 @@ router.put('/preferences', protect, async (req, res) => {
       req.user.email = email;
     }
     
+    if (Object.prototype.hasOwnProperty.call(req.body, 'emailRemindersEnabled')) {
+      req.user.emailRemindersEnabled = req.body.emailRemindersEnabled;
+    }
+    
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {

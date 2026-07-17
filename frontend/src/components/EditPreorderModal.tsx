@@ -127,7 +127,10 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
                   <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
                     required
-                    type="month"
+                    type={formData.eta ? "month" : "text"}
+                    placeholder="Month, Year"
+                    onFocus={(e) => (e.target.type = "month")}
+                    onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
                     value={formData.eta}
                     onChange={e => setFormData({ ...formData, eta: e.target.value })}
                     className={`input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark] ${!formData.eta ? 'text-slate-500' : 'text-white'}`}

@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
   primary_brand: { type: String, default: null },
-  secondary_brand: { type: String, default: null }
+  secondary_brand: { type: String, default: null },
+  emailRemindersEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {

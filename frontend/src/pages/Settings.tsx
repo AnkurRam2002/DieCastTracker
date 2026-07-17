@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import { User, Mail, Save } from 'lucide-react';
+import { User, Mail, Save, Bell, BellOff } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { user, login, token } = useAuth();
   const [email, setEmail] = useState('');
+  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -15,6 +16,7 @@ export const Settings: React.FC = () => {
         const res = await authService.profile();
         if (res.success && res.user) {
           setEmail(res.user.email || '');
+          setEmailRemindersEnabled(res.user.emailRemindersEnabled !== false);
           // Update context with latest user data if we want to
           if (token) login(token, { ...user, ...res.user });
         }
@@ -30,7 +32,7 @@ export const Settings: React.FC = () => {
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {
-      const res = await authService.updatePreferences({ email });
+      const res = await authService.updatePreferences({ email, emailRemindersEnabled });
       if (res.success) {
         setMessage({ text: 'Settings saved successfully!', type: 'success' });
         if (token && res.user) {
@@ -98,6 +100,27 @@ export const Settings: React.FC = () => {
               />
             </div>
             <p className="text-xs text-slate-500 ml-1">We'll use this for account recovery and notifications.</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-xl border border-white/5">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                  {emailRemindersEnabled ? <Bell className="w-4 h-4 text-amber-500" /> : <BellOff className="w-4 h-4 text-slate-500" />}
+                  Monthly Preorder Updates
+                </label>
+                <p className="text-xs text-slate-500">Receive an email on the 1st of every month with your upcoming preorders.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={emailRemindersEnabled}
+                  onChange={(e) => setEmailRemindersEnabled(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
           </div>
 
           {message.text && (

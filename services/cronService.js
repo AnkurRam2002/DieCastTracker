@@ -64,8 +64,11 @@ const startMonthlyPreorderCron = () => {
     console.log('Running monthly preorder notification cron job...');
     
     try {
-      // Find all users who have an email address
-      const users = await User.find({ email: { $exists: true, $ne: '' } });
+      // Find all users who have an email address and have not disabled email reminders
+      const users = await User.find({ 
+        email: { $exists: true, $ne: '' },
+        emailRemindersEnabled: { $ne: false } 
+      });
       
       if (users.length === 0) {
         console.log('No users with email found.');

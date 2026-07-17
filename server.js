@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const { startMonthlyPreorderCron } = require('./services/cronService');
 
 const modelRoutes = require('./routes/modelRoutes');
 const brandRoutes = require('./routes/brandRoutes');
@@ -13,6 +14,9 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// Initialize Cron Jobs
+startMonthlyPreorderCron();
 
 // Middleware
 app.use(cors({

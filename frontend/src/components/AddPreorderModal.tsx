@@ -83,7 +83,7 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
                   list="add-seller-suggestions"
                   value={formData.seller}
                   onChange={e => setFormData({ ...formData, seller: e.target.value })}
-                  placeholder="e.target.value..."
+                  placeholder="Enter seller name..."
                   className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50"
                 />
                 <datalist id="add-seller-suggestions">

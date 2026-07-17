@@ -150,7 +150,7 @@ export const Preorders: React.FC = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={fetchPreorders}
-        sellers={[]}
+        sellers={sellers}
       />
       {selectedPreorder && (
         <EditPreorderModal
@@ -158,6 +158,7 @@ export const Preorders: React.FC = () => {
           onClose={() => { setIsEditModalOpen(false); setSelectedPreorder(null); }}
           onSuccess={fetchPreorders}
           preorder={selectedPreorder}
+          sellers={sellers}
         />
       )}
 

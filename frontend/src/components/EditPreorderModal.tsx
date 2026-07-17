@@ -7,9 +7,10 @@ interface EditPreorderModalProps {
   onClose: () => void;
   onSuccess: () => void;
   preorder: any;
+  sellers: string[];
 }
 
-const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, onSuccess, preorder }) => {
+const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, onSuccess, preorder, sellers }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     seller: '',
@@ -25,7 +26,7 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
     if (preorder) {
       setFormData({
         seller: preorder.Seller || '',
-        models: preorder.Models || '',
+        models: preorder.Items || preorder.Models || '',
         eta: preorder.ETA || '',
         total_price: preorder['Total Price']?.toString() || '',
         po_amount: preorder['PO Amount']?.toString() || '',
@@ -93,10 +94,15 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
                 <input
                   required
                   type="text"
+                  list="edit-seller-suggestions"
                   value={formData.seller}
                   onChange={e => setFormData({ ...formData, seller: e.target.value })}
+                  placeholder="Enter seller name..."
                   className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50"
                 />
+                <datalist id="edit-seller-suggestions">
+                  {sellers?.map(s => <option key={s} value={s} />)}
+                </datalist>
               </div>
             </div>
 

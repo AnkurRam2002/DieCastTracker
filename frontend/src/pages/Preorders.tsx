@@ -243,7 +243,7 @@ export const Preorders: React.FC = () => {
             type="month" 
             value={timeFilter === 'upcoming_month' ? '' : timeFilter} 
             onChange={e => setTimeFilter(e.target.value)}
-            className="bg-transparent text-sm text-white focus:outline-none min-w-[120px] [&::-webkit-calendar-picker-indicator]:invert-[0.7]"
+            className={`bg-transparent text-sm focus:outline-none min-w-[120px] [&::-webkit-calendar-picker-indicator]:invert-[0.7] ${timeFilter === 'upcoming_month' || !timeFilter ? 'text-slate-500' : 'text-white'}`}
           />
         </div>
 

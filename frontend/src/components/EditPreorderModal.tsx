@@ -27,7 +27,7 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
       setFormData({
         seller: preorder.Seller || '',
         models: preorder.Items || preorder.Models || '',
-        eta: preorder.ETA || '',
+        eta: preorder.ETA ? String(preorder.ETA).substring(0, 7) : '',
         total_price: preorder['Total Price']?.toString() || '',
         po_amount: preorder['PO Amount']?.toString() || '',
         on_arrival_amount: preorder['On Arrival Amount']?.toString() || '',
@@ -130,7 +130,7 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
                     type="month"
                     value={formData.eta}
                     onChange={e => setFormData({ ...formData, eta: e.target.value })}
-                    className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark]"
+                    className={`input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark] ${!formData.eta ? 'text-slate-500' : 'text-white'}`}
                   />
                 </div>
               </div>

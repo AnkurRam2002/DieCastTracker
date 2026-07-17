@@ -117,7 +117,7 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
                     type="month"
                     value={formData.eta}
                     onChange={e => setFormData({ ...formData, eta: e.target.value })}
-                    className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark]"
+                    className={`input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50 [color-scheme:dark] ${!formData.eta ? 'text-slate-500' : 'text-white'}`}
                   />
                 </div>
               </div>

@@ -7,6 +7,7 @@ export const Settings: React.FC = () => {
   const { user, login, token } = useAuth();
   const [email, setEmail] = useState('');
   const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(true);
+  const [emailReminderDay, setEmailReminderDay] = useState(1);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -17,6 +18,7 @@ export const Settings: React.FC = () => {
         if (res.success && res.user) {
           setEmail(res.user.email || '');
           setEmailRemindersEnabled(res.user.emailRemindersEnabled !== false);
+          setEmailReminderDay(res.user.emailReminderDay || 1);
           // Update context with latest user data if we want to
           if (token) login(token, { ...user, ...res.user });
         }
@@ -32,7 +34,7 @@ export const Settings: React.FC = () => {
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {
-      const res = await authService.updatePreferences({ email, emailRemindersEnabled });
+      const res = await authService.updatePreferences({ email, emailRemindersEnabled, emailReminderDay });
       if (res.success) {
         setMessage({ text: 'Settings saved successfully!', type: 'success' });
         if (token && res.user) {
@@ -109,7 +111,7 @@ export const Settings: React.FC = () => {
                   {emailRemindersEnabled ? <Bell className="w-4 h-4 text-amber-500" /> : <BellOff className="w-4 h-4 text-slate-500" />}
                   Monthly Preorder Updates
                 </label>
-                <p className="text-xs text-slate-500">Receive an email on the 1st of every month with your upcoming preorders.</p>
+                <p className="text-xs text-slate-500">Receive an email on the {emailReminderDay}{[1, 21, 31].includes(emailReminderDay) ? 'st' : [2, 22].includes(emailReminderDay) ? 'nd' : [3, 23].includes(emailReminderDay) ? 'rd' : 'th'} of every month with your upcoming preorders.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
@@ -121,6 +123,23 @@ export const Settings: React.FC = () => {
                 <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
               </label>
             </div>
+
+            {emailRemindersEnabled && (
+              <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-xl border border-white/5 ml-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-300">Delivery Day</label>
+                  <p className="text-xs text-slate-500">Day of the month to send the email (1-28).</p>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="28"
+                  value={emailReminderDay}
+                  onChange={e => setEmailReminderDay(parseInt(e.target.value) || 1)}
+                  className="input w-24 text-center"
+                />
+              </div>
+            )}
           </div>
 
           {message.text && (

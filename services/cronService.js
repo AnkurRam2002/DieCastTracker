@@ -88,72 +88,81 @@ const generatePreorderEmailHTML = (user, preorders, monthName) => {
 
 // The cron job runs daily at 00:00 (midnight)
 // '0 0 * * *'
+const processMonthlyPreorders = async () => {
+  console.log('Running daily preorder notification cron job check...');
+  
+  try {
+    // Get current date details
+    const now = new Date();
+    const currentDay = now.getDate();
+    const currentYear = now.getFullYear();
+    const currentMonthIndex = now.getMonth(); // 0-indexed
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    // Find all users who have an email address, have not disabled email reminders, and their reminder day is today
+    const query = { 
+      email: { $exists: true, $ne: '' },
+      emailRemindersEnabled: { $ne: false } 
+    };
+
+    if (currentDay === 1) {
+      query.$or = [{ emailReminderDay: 1 }, { emailReminderDay: { $exists: false } }];
+    } else {
+      query.emailReminderDay = currentDay;
+    }
+
+    const users = await User.find(query);
+    
+    if (users.length === 0) {
+      console.log('No users to notify today.');
+      return { success: true, message: 'No users to notify today.' };
+    }
+
+    for (const user of users) {
+      // Find preorders for this user that are meant to be fulfilled this month
+      const preorders = await Preorder.find({ user: user._id });
+      
+      // Filter in memory for exact month/year matching based on the ETA string
+      const currentMonthPreorders = preorders.filter(p => {
+        if (!p.eta) return false;
+        const etaDate = new Date(p.eta);
+        return (
+          etaDate.getFullYear() === currentYear &&
+          etaDate.getMonth() === currentMonthIndex &&
+          p.payment_status !== 'Completed' // Optionally filter out completed ones, or keep all
+        );
+      });
+
+      if (currentMonthPreorders.length > 0) {
+        const htmlContent = generatePreorderEmailHTML(user, currentMonthPreorders, monthName);
+        
+        await sendEmail({
+          to: user.email,
+          subject: `Collector's Registry - Your Preorders for ${monthName}`,
+          html: htmlContent
+        });
+      }
+    }
+    
+    console.log('Monthly preorder notifications processed successfully.');
+    return { success: true, message: 'Processed successfully.' };
+  } catch (error) {
+    console.error('Error in monthly preorder processing:', error);
+    throw error;
+  }
+};
+
+// The cron job runs daily at 00:00 (midnight)
+// '0 0 * * *'
 const startMonthlyPreorderCron = () => {
   cron.schedule('0 0 * * *', async () => {
-    console.log('Running daily preorder notification cron job check...');
-    
-    try {
-      // Get current date details
-      const now = new Date();
-      const currentDay = now.getDate();
-      const currentYear = now.getFullYear();
-      const currentMonthIndex = now.getMonth(); // 0-indexed
-      const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-      // Find all users who have an email address, have not disabled email reminders, and their reminder day is today
-      const query = { 
-        email: { $exists: true, $ne: '' },
-        emailRemindersEnabled: { $ne: false } 
-      };
-
-      if (currentDay === 1) {
-        query.$or = [{ emailReminderDay: 1 }, { emailReminderDay: { $exists: false } }];
-      } else {
-        query.emailReminderDay = currentDay;
-      }
-
-      const users = await User.find(query);
-      
-      if (users.length === 0) {
-        console.log('No users to notify today.');
-        return;
-      }
-
-      for (const user of users) {
-        // Find preorders for this user that are meant to be fulfilled this month
-        const preorders = await Preorder.find({ user: user._id });
-        
-        // Filter in memory for exact month/year matching based on the ETA string
-        const currentMonthPreorders = preorders.filter(p => {
-          if (!p.eta) return false;
-          const etaDate = new Date(p.eta);
-          return (
-            etaDate.getFullYear() === currentYear &&
-            etaDate.getMonth() === currentMonthIndex &&
-            p.payment_status !== 'Completed' // Optionally filter out completed ones, or keep all
-          );
-        });
-
-        if (currentMonthPreorders.length > 0) {
-          const htmlContent = generatePreorderEmailHTML(user, currentMonthPreorders, monthName);
-          
-          await sendEmail({
-            to: user.email,
-            subject: `Collector's Registry - Your Preorders for ${monthName}`,
-            html: htmlContent
-          });
-        }
-      }
-      
-      console.log('Monthly preorder notifications processed successfully.');
-    } catch (error) {
-      console.error('Error in monthly preorder cron job:', error);
-    }
+    await processMonthlyPreorders();
   });
   
   console.log('Cron job initialized: Monthly Preorder Notifications (1st of every month at midnight)');
 };
 
 module.exports = {
-  startMonthlyPreorderCron
+  startMonthlyPreorderCron,
+  processMonthlyPreorders
 };

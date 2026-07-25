@@ -11,6 +11,7 @@ const brandRoutes = require('./routes/brandRoutes');
 const seriesRoutes = require('./routes/seriesRoutes');
 const preorderRoutes = require('./routes/preorderRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const cronRoutes = require('./routes/cronRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -48,6 +49,7 @@ app.use('/api/brands', brandRoutes);
 app.use('/api/series', seriesRoutes);
 app.use('/api/preorders', preorderRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Serve static files from React frontend
 if (process.env.NODE_ENV === 'production' || require('fs').existsSync(path.join(__dirname, 'frontend/dist'))) {

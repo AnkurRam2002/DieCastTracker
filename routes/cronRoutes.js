@@ -24,8 +24,9 @@ router.post('/trigger-emails', async (req, res) => {
   }
 
   try {
-    const result = await processMonthlyPreorders();
-    res.status(200).json(result);
+    // Run the email processing in the background to avoid timeouts
+    processMonthlyPreorders().catch(err => console.error('Background Cron Error:', err));
+    res.status(202).json({ success: true, message: 'Processing started in background' });
   } catch (error) {
     console.error('API Cron Trigger Error:', error);
     res.status(500).json({ success: false, error: 'Internal Server Error' });

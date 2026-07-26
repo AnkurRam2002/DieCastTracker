@@ -133,15 +133,14 @@ const processMonthlyPreorders = async () => {
         );
       });
 
-      if (currentMonthPreorders.length > 0) {
-        const htmlContent = generatePreorderEmailHTML(user, currentMonthPreorders, monthName);
-        
-        await sendEmail({
-          to: user.email,
-          subject: `Collector's Registry - Your Preorders for ${monthName}`,
-          html: htmlContent
-        });
-      }
+      // Always send the email, the template handles 0 preorders
+      const htmlContent = generatePreorderEmailHTML(user, currentMonthPreorders, monthName);
+      
+      await sendEmail({
+        to: user.email,
+        subject: `Collector's Registry - Your Preorders for ${monthName}`,
+        html: htmlContent
+      });
     }
     
     console.log('Monthly preorder notifications processed successfully.');

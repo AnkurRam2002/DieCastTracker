@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const preorderSchema = new mongoose.Schema({
   serial_number: { type: Number, required: true, unique: true, index: true },
-  seller: { type: String, required: true, index: true },
+  seller: { type: String, index: true },
+  seller_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', index: true },
+  seller_link: { type: String },
   models: { type: String, required: true },
   eta: { type: String },
   total_price: { type: Number },

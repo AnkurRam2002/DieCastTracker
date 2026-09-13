@@ -13,23 +13,32 @@ const generatePreorderEmailHTML = (user, preorders, monthName) => {
     `;
   }
 
-  const tableRows = preorders.map(p => `
+  const tableRows = preorders.map(p => {
+    const status = p.delivery_status || 'Pending';
+    let statusColor = '#d97706'; // Pending
+    if (status === 'Delivered') statusColor = '#059669';
+    else if (status === 'Cancelled') statusColor = '#e11d48';
+    else if (['Paid', 'Shipped'].includes(status)) statusColor = '#2563eb';
+
+    return `
     <tr>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">${p.seller}</td>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">${p.brand}</td>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">${p.model}</td>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">₹${p.price}</td>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">₹${p.paid_amount || 0}</td>
-      <td style="padding: 10px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: ${p.payment_status === 'Pending' ? '#d97706' : '#059669'};">
-        ${p.payment_status}
+      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">${p.seller || '-'}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">${p.models || '-'}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">₹${p.total_price || 0}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">₹${p.po_amount || 0}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: ${statusColor};">
+        ${status}
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const totalToBePaid = preorders.reduce((sum, p) => {
-    const price = Number(p.price) || 0;
-    const paid = Number(p.paid_amount) || 0;
-    return sum + (price - paid);
+    const total = Number(p.total_price) || 0;
+    const poAmt = Number(p.po_amount) || 0;
+    const isCleared = ['Paid', 'Shipped', 'Delivered'].includes(p.delivery_status);
+    const remaining = (p.delivery_status === 'Cancelled') ? 0 : (isCleared ? 0 : (total - poAmt));
+    return sum + remaining;
   }, 0);
 
   return `
@@ -58,10 +67,9 @@ const generatePreorderEmailHTML = (user, preorders, monthName) => {
             <thead>
               <tr style="background-color: #f8fafc; text-align: left; border-bottom: 2px solid #cbd5e1;">
                 <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Seller</th>
-                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Brand</th>
-                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Model</th>
-                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Price</th>
-                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Paid</th>
+                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Items</th>
+                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Total Price</th>
+                <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">PO Amount</th>
                 <th style="padding: 12px 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Status</th>
               </tr>
             </thead>
@@ -126,10 +134,12 @@ const processMonthlyPreorders = async () => {
       const currentMonthPreorders = preorders.filter(p => {
         if (!p.eta) return false;
         const etaDate = new Date(p.eta);
+        const status = p.delivery_status || 'Pending';
         return (
           etaDate.getFullYear() === currentYear &&
           etaDate.getMonth() === currentMonthIndex &&
-          p.payment_status !== 'Completed' // Optionally filter out completed ones, or keep all
+          status !== 'Delivered' &&
+          status !== 'Cancelled'
         );
       });
 

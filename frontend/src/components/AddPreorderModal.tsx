@@ -7,12 +7,14 @@ interface AddPreorderModalProps {
   onClose: () => void;
   onSuccess: () => void;
   sellers: string[];
+  sellerObjects?: any[];
 }
 
-const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, onSuccess, sellers }) => {
+const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, onSuccess, sellers, sellerObjects = [] }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     seller: '',
+    seller_link: '',
     models: '',
     eta: '',
     total_price: '',
@@ -36,12 +38,19 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await preorderService.add(formData);
+      let seller_id;
+      const matchedSeller = sellerObjects.find(s => s.alias.toLowerCase() === formData.seller.toLowerCase());
+      if (matchedSeller) {
+        seller_id = matchedSeller._id;
+      }
+      
+      const res = await preorderService.add({ ...formData, seller_id });
       if (res.success) {
         onSuccess();
         onClose();
         setFormData({
           seller: '',
+          seller_link: '',
           models: '',
           eta: '',
           total_price: '',
@@ -93,6 +102,20 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
             </div>
 
             <div className="space-y-1.5">
+              <label className="label-xs text-slate-500 ml-1">Temporary Link (Optional)</label>
+              <div className="relative">
+                <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  value={formData.seller_link}
+                  onChange={e => setFormData({ ...formData, seller_link: e.target.value })}
+                  placeholder="Link to post, message, etc..."
+                  className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
               <label className="label-xs text-slate-500 ml-1">Models / Description</label>
               <div className="relative">
                 <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -136,6 +159,7 @@ const AddPreorderModal: React.FC<AddPreorderModalProps> = ({ isOpen, onClose, on
                   <option className="bg-slate-900" value="Paid">Paid</option>
                   <option className="bg-slate-900" value="Shipped">Shipped</option>
                   <option className="bg-slate-900" value="Delivered">Delivered</option>
+                  <option className="bg-slate-900" value="Cancelled">Cancelled</option>
                 </select>
               </div>
             </div>

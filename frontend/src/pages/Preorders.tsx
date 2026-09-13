@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { preorderService } from '../services/api';
+import { preorderService, sellerService } from '../services/api';
 import { Table } from '../components/Table';
 import { Plus, Search, Filter, Edit2, Trash2, TrendingUp } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -11,6 +11,7 @@ const STATUS_STYLES: Record<string, string> = {
   Shipped:   'bg-blue-500/10   text-blue-400   border-blue-500/20',
   Paid:      'bg-violet-500/10 text-violet-400  border-violet-500/20',
   Pending:   'bg-amber-500/10  text-amber-400   border-amber-500/20',
+  Cancelled: 'bg-rose-500/10   text-rose-400    border-rose-500/20',
 };
 
 export const Preorders: React.FC = () => {
@@ -18,6 +19,7 @@ export const Preorders: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [sellers, setSellers] = useState<string[]>([]);
+  const [sellerObjects, setSellerObjects] = useState<any[]>([]);
 
   // Pagination & Backend Metadata
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,6 +50,9 @@ export const Preorders: React.FC = () => {
     preorderService.getSellers().then(res => {
       if (res.success) setSellers(res.sellers);
     });
+    sellerService.getAll().then(res => {
+      if (res.success) setSellerObjects(res.data);
+    });
   }, []);
 
   useEffect(() => {
@@ -67,7 +72,12 @@ export const Preorders: React.FC = () => {
           sortOrder,
           timeFilter
         }),
-        preorderService.getStats()
+        preorderService.getStats({
+          search: debouncedSearch,
+          sellerFilter,
+          statusFilter,
+          timeFilter
+        })
       ]);
       if (dataRes.success) {
         setPreorders(dataRes.data);
@@ -106,7 +116,7 @@ export const Preorders: React.FC = () => {
   }, [stats]);
 
   const cycleStatus = async (serialNumber: number, currentStatus: string) => {
-    const sequence = ['Pending', 'Paid', 'Shipped', 'Delivered'];
+    const sequence = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
     const nextIdx = (sequence.indexOf(currentStatus || 'Pending') + 1) % sequence.length;
     const nextStatus = sequence[nextIdx];
 
@@ -151,6 +161,7 @@ export const Preorders: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={fetchPreorders}
         sellers={sellers}
+        sellerObjects={sellerObjects}
       />
       {selectedPreorder && (
         <EditPreorderModal
@@ -159,6 +170,7 @@ export const Preorders: React.FC = () => {
           onSuccess={fetchPreorders}
           preorder={selectedPreorder}
           sellers={sellers}
+          sellerObjects={sellerObjects}
         />
       )}
 
@@ -207,7 +219,7 @@ export const Preorders: React.FC = () => {
           { label: 'Total Preorders', value: statsData.totalRecords, color: 'text-white' },
           { label: 'Initial PO',    value: fmt(statsData.totalPO), color: 'text-slate-400' },
           { label: 'On Arrival',   value: fmt(statsData.totalArrival), color: 'text-slate-400' },
-          { label: 'Pending Total', value: fmt(statsData.remaining), color: 'text-red-400' },
+          { label: 'Pending',       value: fmt(statsData.remaining), color: 'text-red-400' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card p-4 border-white/5 bg-slate-900/40 flex flex-col justify-between">
             <div>
@@ -234,7 +246,7 @@ export const Preorders: React.FC = () => {
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="select pr-5 w-auto min-w-[160px]">
           <option value="">All Statuses</option>
-          {['Pending','Paid','Shipped','Delivered'].map(s => <option key={s} value={s}>{s}</option>)}
+          {['Pending','Paid','Shipped','Delivered','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         
         <div className="relative flex items-center bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2 focus-within:border-amber-500/50 transition-colors hover:border-white/10">
@@ -266,13 +278,30 @@ export const Preorders: React.FC = () => {
           const poAmt = safeParse(p['PO Amount']);
           const status = (p['Delivery Status'] || 'Pending');
           
+          const isCancelled = status === 'Cancelled';
           const isCleared = ['Paid', 'Shipped', 'Delivered'].includes(status);
-          const paid = isCleared ? total : poAmt;
-          const pending = total - paid;
+          const paid = isCancelled ? poAmt : (isCleared ? total : poAmt);
+          const pending = isCancelled ? 0 : (total - paid);
           
           return {
             ...p,
             _original: p,
+            'Seller': (
+              <div className="flex items-center gap-2">
+                <span className="font-bold">{p.Seller || '-'}</span>
+                {p['Seller Link'] && (
+                  <a 
+                    href={p['Seller Link'].startsWith('http') ? p['Seller Link'] : `https://${p['Seller Link']}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-slate-500 hover:text-amber-400 transition-colors"
+                    title="Open Temporary Link"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                  </a>
+                )}
+              </div>
+            ),
             'ETA': (
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex flex-col items-center justify-center border border-white/5 text-[10px] font-black uppercase text-amber-500/80">

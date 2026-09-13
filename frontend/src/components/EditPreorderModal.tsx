@@ -8,12 +8,14 @@ interface EditPreorderModalProps {
   onSuccess: () => void;
   preorder: any;
   sellers: string[];
+  sellerObjects?: any[];
 }
 
-const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, onSuccess, preorder, sellers }) => {
+const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, onSuccess, preorder, sellers, sellerObjects = [] }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     seller: '',
+    seller_link: '',
     models: '',
     eta: '',
     total_price: '',
@@ -26,6 +28,7 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
     if (preorder) {
       setFormData({
         seller: preorder.Seller || '',
+        seller_link: preorder['Seller Link'] || '',
         models: preorder.Items || preorder.Models || '',
         eta: preorder.ETA ? String(preorder.ETA).substring(0, 7) : '',
         total_price: preorder['Total Price']?.toString() || '',
@@ -51,8 +54,16 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
     e.preventDefault();
     setLoading(true);
     try {
+      let seller_id;
+      const matchedSeller = sellerObjects.find(s => s.alias.toLowerCase() === formData.seller.toLowerCase());
+      if (matchedSeller) {
+        seller_id = matchedSeller._id;
+      }
+      
       const res = await preorderService.update(preorder['S.No'], {
         seller: formData.seller,
+        seller_id: seller_id,
+        seller_link: formData.seller_link,
         models: formData.models,
         eta: formData.eta,
         total_price: formData.total_price,
@@ -107,6 +118,20 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
             </div>
 
             <div className="space-y-1.5">
+              <label className="label-xs text-slate-500 ml-1">Temporary Link (Optional)</label>
+              <div className="relative">
+                <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  value={formData.seller_link}
+                  onChange={e => setFormData({ ...formData, seller_link: e.target.value })}
+                  placeholder="Link to post, message, etc..."
+                  className="input pl-11 bg-white/5 border-white/10 focus:border-amber-500/50"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
               <label className="label-xs text-slate-500 ml-1">Models / Description</label>
               <div className="relative">
                 <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -149,6 +174,7 @@ const EditPreorderModal: React.FC<EditPreorderModalProps> = ({ isOpen, onClose, 
                   <option className="bg-slate-900" value="Paid">Paid</option>
                   <option className="bg-slate-900" value="Shipped">Shipped</option>
                   <option className="bg-slate-900" value="Delivered">Delivered</option>
+                  <option className="bg-slate-900" value="Cancelled">Cancelled</option>
                 </select>
               </div>
             </div>

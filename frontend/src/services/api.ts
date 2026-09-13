@@ -58,7 +58,15 @@ export const preorderService = {
     ).toString();
     return api.get(`/api/preorders?${qs}`).then(res => res.data);
   },
-  getStats: () => api.get('/api/preorders/statistics').then(res => res.data),
+  getStats: (params: any = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).reduce((acc, [k, v]) => {
+        if (v !== undefined && v !== null && v !== '') acc[k] = String(v);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    return api.get(`/api/preorders/statistics?${qs}`).then(res => res.data);
+  },
   getSellers: () => api.get('/api/preorders/sellers').then(res => res.data),
   add: (data: any) => api.post('/api/preorders', data).then(res => res.data),
   update: (serial_number: number, updates: any) => api.put(`/api/preorders/${serial_number}`, updates).then(res => res.data),
@@ -67,6 +75,14 @@ export const preorderService = {
 
 export const analyticsService = {
   getStatistics: () => api.get('/api/analytics').then(res => res.data),
+};
+
+export const sellerService = {
+  getAll: () => api.get('/api/sellers').then(res => res.data),
+  getById: (id: string) => api.get(`/api/sellers/${id}`).then(res => res.data),
+  add: (data: any) => api.post('/api/sellers', data).then(res => res.data),
+  update: (id: string, data: any) => api.put(`/api/sellers/${id}`, data).then(res => res.data),
+  delete: (id: string) => api.delete(`/api/sellers/${id}`).then(res => res.data),
 };
 
 export const authService = {

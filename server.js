@@ -12,6 +12,7 @@ const seriesRoutes = require('./routes/seriesRoutes');
 const preorderRoutes = require('./routes/preorderRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const cronRoutes = require('./routes/cronRoutes');
+const sellerRoutes = require('./routes/sellerRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -29,7 +30,9 @@ app.use(morgan('dev')); // Logs to console
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URL || 'mongodb://localhost:27017/collectors_registry';
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 10000,
+})
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -50,6 +53,7 @@ app.use('/api/series', seriesRoutes);
 app.use('/api/preorders', preorderRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/sellers', sellerRoutes);
 
 // Serve static files from React frontend
 if (process.env.NODE_ENV === 'production' || require('fs').existsSync(path.join(__dirname, 'frontend/dist'))) {

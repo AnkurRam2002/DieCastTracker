@@ -21,7 +21,10 @@ router.get('/', async (req, res) => {
 
     const data = result.data.map(po => ({
       "S.No": po.serial_number,
-      "Seller": po.seller,
+      "Seller": po.seller_id ? po.seller_id.alias : po.seller,
+      "SellerId": po.seller_id ? po.seller_id._id : null,
+      "Seller Link": po.seller_link || null,
+      "seller_details": po.seller_id || null,
       "Items": po.models,
       "ETA": po.eta,
       "Total Price": po.total_price,
@@ -45,8 +48,8 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { seller, models, eta, total_price, po_amount, on_arrival_amount, delivery_status } = req.body;
-    await PreorderService.addPreorder(seller, models, eta, total_price, po_amount, on_arrival_amount, delivery_status, req.user._id);
+    const { seller, seller_id, seller_link, models, eta, total_price, po_amount, on_arrival_amount, delivery_status } = req.body;
+    await PreorderService.addPreorder(seller, models, eta, total_price, po_amount, on_arrival_amount, delivery_status, req.user._id, seller_id, seller_link);
     res.json({ success: true, message: "Preorder added successfully!" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -85,7 +88,13 @@ router.delete('/:serial_number', async (req, res) => {
 
 router.get('/statistics', async (req, res) => {
   try {
-    const stats = await PreorderService.getStatistics(req.user._id);
+    const { search, sellerFilter, statusFilter, timeFilter } = req.query;
+    const stats = await PreorderService.getStatistics(req.user._id, {
+      search: search || '',
+      sellerFilter: sellerFilter || '',
+      statusFilter: statusFilter || '',
+      timeFilter: timeFilter || ''
+    });
     res.json({ success: true, statistics: stats });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

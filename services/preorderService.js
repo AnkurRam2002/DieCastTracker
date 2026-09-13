@@ -1,14 +1,11 @@
 const Preorder = require('../models/Preorder');
 
 class PreorderService {
-  static async getAllPreorders(userId, options = {}) {
+  static _buildQuery(userId, options = {}) {
     const {
-      page = 1,
-      limit = 50,
       search = '',
       sellerFilter = '',
       statusFilter = '',
-      sortOrder = 'desc',
       timeFilter = ''
     } = options;
 
@@ -30,12 +27,12 @@ class PreorderService {
         const nextMonthStr = nextMonth.toISOString().slice(0, 7);
         
         if (!statusFilter) {
-          query.delivery_status = { $ne: 'Delivered' };
+          query.delivery_status = { $nin: ['Delivered', 'Cancelled'] };
         }
         query.eta = { $in: [currentMonthStr, nextMonthStr] };
       } else {
         if (!statusFilter) {
-          query.delivery_status = { $ne: 'Delivered' };
+          query.delivery_status = { $nin: ['Delivered', 'Cancelled'] };
         }
         query.eta = { $lte: timeFilter };
       }
@@ -49,11 +46,23 @@ class PreorderService {
       ];
     }
 
+    return query;
+  }
+
+  static async getAllPreorders(userId, options = {}) {
+    const {
+      page = 1,
+      limit = 50,
+      sortOrder = 'desc'
+    } = options;
+
+    const query = PreorderService._buildQuery(userId, options);
+
     const sort = { serial_number: sortOrder === 'asc' ? 1 : -1 };
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      Preorder.find(query).sort(sort).skip(skip).limit(limit).lean(),
+      Preorder.find(query).populate('seller_id').sort(sort).skip(skip).limit(limit).lean(),
       Preorder.countDocuments(query)
     ]);
 
@@ -65,7 +74,7 @@ class PreorderService {
     };
   }
 
-  static async addPreorder(seller, models, eta, totalPrice, poAmount, onArrivalAmount, deliveryStatus = "Pending", userId) {
+  static async addPreorder(seller, models, eta, totalPrice, poAmount, onArrivalAmount, deliveryStatus = "Pending", userId, sellerId = null, sellerLink = null) {
     const query = userId ? { user: userId } : {};
 
     // 1. Determine next serial number per user
@@ -76,7 +85,9 @@ class PreorderService {
     // 2. Create preorder
     const newPo = new Preorder({
       serial_number: serialNumber,
-      seller: seller.trim(),
+      seller: seller ? seller.trim() : '',
+      seller_id: sellerId,
+      seller_link: sellerLink ? sellerLink.trim() : '',
       models: models.trim(),
       eta,
       total_price: totalPrice,
@@ -99,6 +110,8 @@ class PreorderService {
 
     const keyMap = {
       "Seller": "seller", "seller": "seller",
+      "SellerId": "seller_id", "seller_id": "seller_id",
+      "Seller Link": "seller_link", "seller_link": "seller_link",
       "Models": "models", "models": "models",
       "ETA": "eta", "eta": "eta",
       "Total Price": "total_price", "total_price": "total_price",
@@ -116,6 +129,8 @@ class PreorderService {
             val = parseFloat(value.replace(/[₹,]/g, '').trim()) || 0.0;
           }
           po[modelKey] = val;
+        } else if (modelKey === 'seller_id') {
+          po[modelKey] = value;
         } else {
           po[modelKey] = String(value).trim();
         }
@@ -153,11 +168,21 @@ class PreorderService {
     return await Preorder.distinct("seller", query);
   }
 
-  static async getStatistics(userId) {
-    const query = userId ? { user: userId } : {};
-    const preorders = await Preorder.find(query).lean();
+  static async getStatistics(userId, options = {}) {
+    const query = PreorderService._buildQuery(userId, options);
+    const preorders = await Preorder.find(query).populate('seller_id').lean();
     if (!preorders || preorders.length === 0) {
-      return {};
+      return {
+        total_preorders: 0,
+        total_value: 0,
+        total_po_amount: 0,
+        total_on_arrival: 0,
+        active_paid: 0,
+        active_remaining: 0,
+        total_paid: 0,
+        status_breakdown: {},
+        upcoming_arrivals: []
+      };
     }
 
     const totalPreorders = preorders.length;
@@ -183,8 +208,13 @@ class PreorderService {
 
       if (statusLower === "delivered") {
         totalPaid += (po.total_price || 0);
+      } else if (statusLower === "cancelled") {
+        // For cancelled items, paid PO amount remains, but arrival amount liability is 0
+        const poAmt = (po.po_amount || 0);
+        activePaid += poAmt;
+        totalPaid += poAmt;
       } else {
-        // Active (non-delivered) items
+        // Active (non-delivered, non-cancelled) items
         const poAmt = (po.po_amount || 0);
         const arrivalAmt = (po.on_arrival_amount || 0);
 
@@ -199,14 +229,14 @@ class PreorderService {
         }
       }
 
-      if (status !== "Delivered" && po.eta) {
+      if (status !== "Delivered" && status !== "Cancelled" && po.eta) {
         const etaMonth = String(po.eta).slice(0, 7);
         if (etaMonth === currentMonthStr || etaMonth === nextMonthStr) {
           upcomingArrivals.push({
             serial: po.serial_number,
             models: po.models,
             eta: etaMonth,
-            seller: po.seller,
+            seller: po.seller_id ? po.seller_id.alias : po.seller,
             status: status
           });
         }

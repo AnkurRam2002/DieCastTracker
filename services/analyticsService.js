@@ -66,10 +66,11 @@ class AnalyticsService {
 
     const recentAdditions = recentModels.map(model => ({
       "S.No": model.serial_number,
+      "Item Name": model.model_name,
       "Model Name": model.model_name,
-      "Series": model.metadata.subseries ? model.metadata.subseries.name : "Unknown",
-      "Main Series": model.metadata.series ? model.metadata.series.name : "Unknown",
-      "Brand": model.metadata.brand ? model.metadata.brand.name : "Hot Wheels"
+      "Brand": model.metadata.brand ? model.metadata.brand.name : "",
+      "Series": model.metadata.series ? model.metadata.series.name : "",
+      "Subseries": model.metadata.subseries ? model.metadata.subseries.name : ""
     }));
 
     return {

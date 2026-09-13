@@ -259,19 +259,32 @@ export const Analytics: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[360px] pr-2 custom-scrollbar">
-            {stats.recent_additions?.map((item: any) => (
-              <div key={item['S.No']} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/30 group/row transition-all hover:bg-white/[0.04]">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-[10px] font-black text-blue-500/60 uppercase tracking-widest mb-1">{item['Brand']}</div>
-                    <div className="text-sm font-black text-white group-hover/row:text-blue-400 transition-colors uppercase leading-tight">{item['Item Name']}</div>
-                  </div>
-                  <div className="text-[10px] font-black text-slate-600 bg-white/5 px-2 py-1 rounded-lg border border-white/5 italic">
-                    #{item['S.No']}
+            {stats.recent_additions?.map((item: any) => {
+              const brand = item['Brand'] || '';
+              const series = item['Series'] || item['Main Series'] || '';
+              const subseries = item['Subseries'] || '';
+              const itemName = item['Item Name'] || item['Model Name'] || 'Unnamed Item';
+
+              const taxonomyPath = [brand, series, subseries].filter(Boolean).join(' - ');
+
+              return (
+                <div key={item['S.No']} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/30 group/row transition-all hover:bg-white/[0.04]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-[10px] font-black text-blue-400/80 uppercase tracking-widest mb-1">
+                        {taxonomyPath || 'Uncategorized'}
+                      </div>
+                      <div className="text-sm font-black text-white group-hover/row:text-blue-400 transition-colors uppercase leading-tight">
+                        {itemName}
+                      </div>
+                    </div>
+                    <div className="text-[10px] font-black text-slate-600 bg-white/5 px-2 py-1 rounded-lg border border-white/5 italic shrink-0">
+                      #{item['S.No']}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

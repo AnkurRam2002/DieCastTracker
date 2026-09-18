@@ -13,7 +13,8 @@ import {
   Tags,
   FolderOpen,
   Settings,
-  Users
+  Users,
+  Heart
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',   path: '/',          section: null },
   { icon: PlusCircle,      label: 'Add Item',    path: '/add',       section: null },
   { icon: ShoppingCart,    label: 'Preorders',   path: '/preorders', section: 'Tracking' },
+  { icon: Heart,           label: 'Wishlist',    path: '/wishlist',  section: 'Tracking' },
   { icon: BarChart3,       label: 'Analytics',   path: '/analytics', section: null },
   { icon: Users,           label: 'Sellers',     path: '/sellers',   section: 'Management' },
   { icon: Tags,            label: 'Brands',      path: '/manage/brands',    section: 'Management' },

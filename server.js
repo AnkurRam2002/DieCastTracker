@@ -13,6 +13,7 @@ const preorderRoutes = require('./routes/preorderRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const cronRoutes = require('./routes/cronRoutes');
 const sellerRoutes = require('./routes/sellerRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -25,7 +26,8 @@ app.use(cors({
   origin: ['http://localhost:5173', 'https://diecast-tracker.netlify.app'],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(morgan('dev')); // Logs to console
 
 // MongoDB Connection
@@ -54,6 +56,7 @@ app.use('/api/preorders', preorderRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/sellers', sellerRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // Serve static files from React frontend
 if (process.env.NODE_ENV === 'production' || require('fs').existsSync(path.join(__dirname, 'frontend/dist'))) {

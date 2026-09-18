@@ -11,6 +11,7 @@ import { AddModel } from './pages/AddModel';
 import { SeriesManagement } from './pages/SeriesManagement';
 import { Settings } from './pages/Settings'; // Added Settings
 import Sellers from './pages/Sellers';
+import { Wishlist } from './pages/Wishlist';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/preorders" element={<Preorders />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/add" element={<AddModel />} />
             <Route path="/manage/:type" element={<SeriesManagement />} />

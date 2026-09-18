@@ -85,6 +85,21 @@ export const sellerService = {
   delete: (id: string) => api.delete(`/api/sellers/${id}`).then(res => res.data),
 };
 
+export const wishlistService = {
+  getAll: (params: any = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).reduce((acc, [k, v]) => {
+        if (v !== undefined && v !== null && v !== '') acc[k] = String(v);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    return api.get(`/api/wishlist?${qs}`).then(res => res.data);
+  },
+  add: (data: any) => api.post('/api/wishlist', data).then(res => res.data),
+  update: (id: string, updates: any) => api.put(`/api/wishlist/${id}`, updates).then(res => res.data),
+  delete: (id: string) => api.delete(`/api/wishlist/${id}`).then(res => res.data),
+};
+
 export const authService = {
   login: (username: string, password: string) =>
     api.post('/api/auth/login', { username, password }).then(res => res.data),

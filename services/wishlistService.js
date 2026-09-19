@@ -121,8 +121,8 @@ class WishlistService {
 
     const wishlistValue = pendingItems.reduce((acc, i) => acc + (i.price || 0), 0);
     const purchasedValue = purchasedItems.reduce((acc, i) => acc + (i.price || 0), 0);
-    const totalValue = items.reduce((acc, i) => acc + (i.price || 0), 0);
-    const avgPrice = totalItems > 0 ? totalValue / totalItems : 0;
+    const itemsWithPrice = items.filter(i => Number(i.price) > 0);
+    const avgPrice = itemsWithPrice.length > 0 ? totalValue / itemsWithPrice.length : 0;
 
     return {
       totalItems,
